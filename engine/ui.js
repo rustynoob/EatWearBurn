@@ -93,6 +93,7 @@ export class UISystem extends System{
       type: "pointer"
     };
     this.ongoingEvents.set(touch.type, touch);
+    event.preventDefault();
   }
 
   pointerMoveHandler(event) {
@@ -112,6 +113,7 @@ export class UISystem extends System{
       type: "pointer"
     };
     this.ongoingEvents.set(touch.type, touch);// this will overwrite the start event
+    event.preventDefault();
   }
 
 
@@ -132,9 +134,12 @@ export class UISystem extends System{
       type: "pointer"
     };
     this.ongoingEvents.set(touch.type, touch);// this will overwrite the start event
+     event.preventDefault();
   }
   pointerCancelHandler(event) {
-    const touch = this.ongoingEvents.get(event.type);
+  event.preventDefault();
+ /*
+     const touch = this.ongoingEvents.get(event.type);
 
     if (!touch) {
       console.error(`Cancel: Could not find touch ${event.pointerId}`);
@@ -145,10 +150,11 @@ export class UISystem extends System{
       x: event.pageX,
       y: event.pageY,
       id: event.pointerId,
-      action: "cancel",
+      action: "move",
       type: "pointer"
     };
     this.ongoingEvents.set(event.pointerId, newTouch);// this will overwrite the start event
+    //*/
   }
 
   update(entities) {
@@ -260,6 +266,7 @@ export class UISystem extends System{
         event.preventDefault();
       }
     });
+    document.addEventListener('contextmenu',event => event.preventDefault());
   }
   //this function is never called
   stop() {

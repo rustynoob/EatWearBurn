@@ -78,9 +78,9 @@ game.addEntity(dustParticles);
 // game code
 class Card extends Entity{
   constructor(type = "item",name = "Card", image = "./graphics/large sprites/cabage.png",stats = (type == "item"?{
-    eat:Math.floor(Math.random()*7-2),
-    wear:Math.floor(Math.random()*6-2),
-    burn:Math.floor(Math.random()*5)
+    eat:{value:Math.floor(Math.random()*7-2)},
+    wear:{value:Math.floor(Math.random()*6-2)},
+    burn:{value:Math.floor(Math.random()*5)}
     }:{wind:{value:Math.floor(Math.random()*4)},temp:{value:Math.floor(Math.random()*7-5)}})){
     super("card");
     this.name =  new WordWrappedTextComponent(name,"sans-serif",32,"black","right",-190,-30,200);
@@ -188,13 +188,6 @@ class Card extends Entity{
           if(caller.selected){
             caller.addComponent(new SoundEffectComponent("drop","play"))
             caller.selected = false;
-            caller.removeComponent("held");
-            if(caller.target){
-              caller.target.addCard(caller);
-            }
-            else{
-            }
-
 
           }
           if(timer){
@@ -227,26 +220,27 @@ function resetClick(entity){
 function clearClick(entity){
     entity.pointer.clicks = 0;
 }
-function cardInHand(self,other){
-  if(self.type == other.type){
-      if(other.target != self){
-      other.target = self;
 
+function setStack(card, target){
+  if(!card.selected){
+    card.removeComponent("held");
+    if(card.type == target.type){
+      if(card.target != target){
+         target.addCard(card);
+
+      }
     }
+    card.stack.arrangeCards();
   }
 }
+function cardInHand(self,other){
+  setStack(other,self);
+}
 function cardOnCard(self,other){
-  if(self.type == other.type){
-    if(self.stack && (self.stack != other.target)){
-      other.target = self.stack;
-      // make sure other is above self
-    }
-  }
-
   const myTransform = self.getComponent("transform");
   const theirTransform = other.getComponent("transform");
   theirTransform.z = Math.max(myTransform.z,theirTransform.z)+1;
-
+  setStack(other,self.stack);
 }
 
 // hand
@@ -284,7 +278,7 @@ class CardCollection extends Entity{
       case "up":
         // if a card has been picked up we need to check if it is being dropped here or not
         //caller.selected = false
-        caller.arrangeCards();
+        //caller.arrangeCards();
         break;
       case "move":
         break;
@@ -299,6 +293,7 @@ class CardCollection extends Entity{
     }
     if (card.stack){
       card.stack.removeCard(card);
+
     }
     card.stack = this;
    // card.name.content = this.name; ///debug
@@ -306,6 +301,7 @@ class CardCollection extends Entity{
       this.cards.push(card);
       card.flip(this.face);
       this.cardAdded(card);
+      this.arrangeCards()
       return true;
     }
 
@@ -339,7 +335,10 @@ class CardCollection extends Entity{
     this.cardRemoved(card);
     return true;
   }
-  cardRemoved(card){return;}
+  cardRemoved(card){
+    return;
+
+  }
   activate(){
     if(this.userAction()){
       return false;
@@ -361,6 +360,7 @@ class CardCollection extends Entity{
       if(card){
         this.target.stack.addCard(card);
       }
+      this.arrangeCards();
     }
     return true;
   }
@@ -859,7 +859,7 @@ fetch('cards.json')
 
       Object.keys(cardTypes[card.type].stats).forEach(stat => {
         cardData.stats[stat] = {
-          value: card[stat],
+          value: parseInt(card[stat],10),
           image: new Image()
         };
         cardData.stats[stat].image.src = cardTypes[card.type].stats[stat];
@@ -869,7 +869,7 @@ fetch('cards.json')
     // the cards are now stored in the cards object
  //     console.log(cards);
     for(let card of cards){
-      let c = new Card(card.type, card.name, card.image,card.stats);
+      let c = new Card(card.type, card.name, card.image);//,card.stats);
       game.addEntity(c);
       itemDraw.addCard(c);
     }
