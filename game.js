@@ -89,8 +89,7 @@ class Card extends Entity{
     this.side = "up";
     this.shape = [{x:0,y:0},{x:200,y:0},{x:200,y:300},{x:0,y:300}];
     this.selected = false;
-    this.pointer = {x:0,y:0,clicks:0}
-    this.target = false;
+    this.pointer = {x:0,y:0,clicks:0,time:Date.now()};
     this.stats = stats;
     //`rgb(${Math.random()*123},${Math.random()*123},${Math.random()*123})`
 
@@ -118,7 +117,7 @@ class Card extends Entity{
     this.addComponent(new TransformComponent((Math.random())*500+2000,(Math.random())*900,Math.random(),(Math.random()-0.5)*3));
 
      this.addComponent(new AnimationComponent(this.getComponent("transform"),new TransformComponent((Math.random())*2800-500,(Math.random())*1300-100,Math.random(),(Math.random()-0.5)*3),10000));
-
+    this.homeTransform = this.getComponent("transform");
     this.addComponent(new Component("table"));
     this.addComponent(new Component("card"));
     let collision = new CollisionComponent(this.shape);
@@ -150,35 +149,30 @@ class Card extends Entity{
     }
   }
   uiCallback(caller, event){
-    const doubleClickSpeed = 300;
+    const doubleClickTime = 300;
       let transform = caller.getComponent("transform");
-      let timer = caller.getComponent("timer")
+      let time = Date.now();
+      const timeRemaining = doubleClickTime - (time - caller.pointer.time);
       switch(event.action){
         case "down":
-          caller.target = false;
-          caller.selected = true;
-          if(timer){
-            timer.time = doubleClickSpeed;
-            timer.callback = resetClick;
-          }
-          else{
-            caller.addComponent(new TimerComponent(doubleClickSpeed, resetClick));
-          }
-          if(caller.pointer.clicks> 0){
+          // double click
+          if(timeRemaining > 0){
+            if(caller.hasComponent("timer")){
+              caller.removeComponent("timer");
+            }
             if(caller.stack){
               caller.stack.activate();
             }
-            if(timer){
-              timer.callback = clearClick;
-            }
-            else{
-              caller.pointer.clicks = 0;
-            }
           }
+          // single click
           else{
+            caller.selected = true;
+            caller.homeTransform =  new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
             caller.pointer.x = event.x
             caller.pointer.y = event.y;
-            caller.pointer.clicks++
+            caller.addComponent(new SoundEffectComponent("pickup","play"));
+            caller.pointer.time = time;
+            transform.z += Math.random();
           }
           if(caller.hasComponent("animation")){
             caller.removeComponent("animation");
@@ -186,12 +180,15 @@ class Card extends Entity{
           break;
         case "up":
           if(caller.selected){
-            caller.addComponent(new SoundEffectComponent("drop","play"))
-            caller.selected = false;
+            // if this has potential to be a double click call the function on a timer
+            //otherwise we will call the function imediatly
 
-          }
-          if(timer){
-            timer.callback = clearClick;
+            if(timeRemaining > 0){
+            caller.addComponent(new TimerComponent(timeRemaining, resetClick));
+            }
+            else{
+              resetClick(caller);
+            }
           }
           break;
         case "move":
@@ -208,18 +205,15 @@ class Card extends Entity{
     }
 }
 function resetClick(entity){
-  if(entity.pointer.clicks == 1){
-    //entity.selected = true;
-    //entity.flip("up");
-    entity.addComponent(new SoundEffectComponent("pickup","play"))
-    entity.addComponent(new Component("held"));
+  entity.addComponent(new SoundEffectComponent("drop","play"))
+  entity.selected = false;
+  let transform = entity.getComponent("transform");
+ // const t = new TransformComponent(transform.x, transform.y, transform.z, transform.rotation, transform.scale );
+//  entity.addComponent(new AnimationComponent(t,entity.homeTransform,500));
+  entity.addComponent(new Component("held"));
 
-  }
-  entity.pointer.clicks = 0;
 }
-function clearClick(entity){
-    entity.pointer.clicks = 0;
-}
+
 
 function setStack(card, target){
   if(!card.selected){
@@ -256,7 +250,7 @@ class CardCollection extends Entity{
     this.face = "up";
     this.mouseOver = false;
     this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"transparent","rgb(0,30,0)"),new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,0)","center",-100,-40,200)]));
-    this.addComponent(new TransformComponent(x,y));
+    this.addComponent(new TransformComponent(x,y,Math.random()));
     this.addComponent(new Component("table"));
     this.addComponent(new Component("hand"));
     this.addComponent(new CollisionComponent(this.shape));
@@ -288,20 +282,19 @@ class CardCollection extends Entity{
   }
   addCardHook(card){return false;}
   addCard(card){
-    if(card.hasComponent("held") || this.addCardHook(card)){
+    if(this.addCardHook(card)){
       return false;
     }
-    if (card.stack){
+    if (card.stack && card.stack != this){
       card.stack.removeCard(card);
 
     }
     card.stack = this;
-   // card.name.content = this.name; ///debug
     if(!this.cards.includes(card)){
       this.cards.push(card);
       card.flip(this.face);
       this.cardAdded(card);
-      this.arrangeCards()
+      this.arrangeCards();
       return true;
     }
 
@@ -313,9 +306,11 @@ class CardCollection extends Entity{
     const xyJitter = 4;
     const rJitter = 0.03;
     for(let i = 0; i < this.cards.length; i++){
-      if(!this.cards[i].hasComponent("held") && !this.cards[i].selected){
+      if(!this.cards[i].selected){
         const cardTransform = this.cards[i].getComponent("transform");
-        if(cardTransform.z != i+stackTransform.z+1){
+        if(
+          cardTransform.z != i+stackTransform.z+1
+        ){
           this.cards[i].addComponent(new AnimationComponent(cardTransform,new TransformComponent(stackTransform.x+(i*this.spacing.x)-(Math.random()*xyJitter),stackTransform.y+(i*this.spacing.y)-(Math.random()*xyJitter),stackTransform.z+i+1,(Math.random()-0.5)*rJitter),1000))
         }
       }
@@ -360,7 +355,7 @@ class CardCollection extends Entity{
       if(card){
         this.target.stack.addCard(card);
       }
-      this.arrangeCards();
+
     }
     return true;
   }
@@ -725,29 +720,8 @@ weatherDiscard.target = {stack:weatherDraw,count:0,shuffel:true};
 
 itemDraw.face = "down";
 weatherDraw.face = "down";
-/*
-itemDraw.userAction = function(){return true;}
-itemDiscard.userAction = function(){return true;}
 
 
-*/
-/*weatherDraw.userAction = function(){
-  // update player score
-  itemEat.activate();
-  itemBurn.activate();
-  if(weatherActive.cards.length <= 0){
-    itemDraw.activate();
-  }
-  if(weatherActive.cards.length >= 4){
-    weatherActive.activate();
-   //itemDraw.activate();
-    if(weatherDiscard.activate()){
-
-    }
-    return true;
-  }
-}
-*/
 
 itemEat.userAction = function(){return true;};
 itemWear.userAction = function(){return true;};
@@ -761,10 +735,10 @@ itemWear.cardAdded = function(card){player.updateWear(card.stats.wear.value)}
 itemBurn.cardAdded = function(card){player.updateBurn(card.stats.burn.value)}
 itemEat.cardRemoved = function(card){player.updateEat(-card.stats.eat.value)}
 itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
-itemBurn.cardRemoved = function(card){
-  player.updateBurn(-card.stats.burn.value)
-  //itemBurn.addComponent(new ParticleEmitterComponent(.5, "dust",{x:0,y:0},itemBurn.shape));
-  //itemBurn.addComponent(new TimerComponent(1000,function(){itemBurn.removeComponent("particleEmitter")}))
+itemBurn.cardRemoved = function(card){player.updateBurn(-card.stats.burn.value)}
+itemHand.addCardHook = function(card){
+  return (card.stack.name != itemDraw.name);
+
 }
 
 weatherActive.userAction = function(){
@@ -888,15 +862,6 @@ for(let i = 0; i < 24; i++){
 function dcm(entity){
   entity.arrangeCards();
 }
-
-
-
-
-
-
-
-
-
 
 
 
