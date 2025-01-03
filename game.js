@@ -34,7 +34,7 @@ ses.registerSoundEffect("./sound/Click with echo.mp3","drop");
 const eventList = [{key:"Digit1",id:"systems"},{key:"Backquote",id:"overlay"},{key:"Digit2",id:"component"},{key:"Digit3",id:"entities"},{key:"Digit4",id:"particles"},{key:"Digit5",id:"collisions"},{key:"KeyW",id:"up"},{key:"ArrowUp",id:"up"},{key:"KeyS",id:"down"},{key:"ArrowDown",id:"down"},{key:"KeyA",id:"left"},{key:"ArrowUp",id:"left"},{key:"KeyD",id:"right"},{key:"ArrowRight",id:"right"},{key:"Space",id:"select"},{key:"Enter",id:"enter"}]
 const uii = new UISystem(eventList);
 
-game.addSystem(musicSystem,2);
+//game.addSystem(musicSystem,2);
 game.addSystem(ses,2);
 game.addSystem(uii,0);
 game.addSystem(new ParticleSystem(),0);
@@ -77,7 +77,11 @@ game.addEntity(dustParticles);
 
 // game code
 class Card extends Entity{
-  constructor(type = "Item",name = "Card"){
+  constructor(type = "item",name = "Card", image = "./graphics/large sprites/cabage.png",stats = (type == "item"?{
+    eat:Math.floor(Math.random()*7-2),
+    wear:Math.floor(Math.random()*6-2),
+    burn:Math.floor(Math.random()*5)
+    }:{wind:{value:Math.floor(Math.random()*4)},temp:{value:Math.floor(Math.random()*7-5)}})){
     super("card");
     this.name =  new WordWrappedTextComponent(name,"sans-serif",32,"black","right",-190,-30,200);
     this.type = type;
@@ -87,29 +91,28 @@ class Card extends Entity{
     this.selected = false;
     this.pointer = {x:0,y:0,clicks:0}
     this.target = false;
-    this.value = (type == "Item"?{
-    eat:Math.floor(Math.random()*7-2),
-    wear:Math.floor(Math.random()*6-2),
-    burn:Math.floor(Math.random()*5)
-    }:{wind:Math.floor(Math.random()*4),temp:Math.floor(Math.random()*7-5)}) ;
+    this.stats = stats;
     //`rgb(${Math.random()*123},${Math.random()*123},${Math.random()*123})`
 
-    this.face =  (type == "Item"?new MultiRenderComponent(0,0,[
-      new PolygonComponent(this.shape,"rgb(255,255,200)","brown"),
-      new TextComponent(""+this.value.eat+ " eat","sans-serif",28,"brown","left",-10,-30),
-      new TextComponent(""+this.value.wear+" wear","sans-serif",29,"brown","left",-10,-60),
-      new TextComponent(""+this.value.burn+" burn","sans-serif",30,"brown","left",-10,-90),
+    this.face =  (type == "item"?new MultiRenderComponent(0,0,[
+      new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
+      new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
+      new PolygonComponent(this.shape,"transparent","brown",10),
+      //new ScaledSpriteComponent("./graphics/large sprites/card.png",0,0,200,300,200,300, 0),
+      new TextComponent(""+this.stats.eat.value+ " eat","sans-serif",28,"brown","left",-10,-30),
+      new TextComponent(""+this.stats.wear.value+" wear","sans-serif",29,"brown","left",-10,-60),
+      new TextComponent(""+this.stats.burn.value+" burn","sans-serif",30,"brown","left",-10,-90),
       this.name
       ]):new MultiRenderComponent(0,0,[
-      new PolygonComponent(this.shape,"rgb(200,200,255)","darkblue"),
-      new TextComponent(""+this.value.wind+ " wind","sans-serif",30,"darkblue","left",-10,-20),
-      new TextComponent(""+this.value.temp+" temp","sans-serif",30,"darkblue","left",-10,-40),
+      new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
+      new TextComponent(""+this.stats.wind.value+ " wind","sans-serif",30,"darkblue","left",-10,-20),
+      new TextComponent(""+this.stats.wind.value+ " wind","sans-serif",30,"darkblue","left",-10,-20),
+      new TextComponent(""+this.stats.temp.value+" temp","sans-serif",30,"darkblue","left",-10,-40),
       this.name
       ]));
     this.back =
-    (type == "Item")?(
-    new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"brown","rgb(255,255,200)"), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)]))
-    :(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"darkblue","rgb(200,200,255)"), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)])
+    (type == "item")?(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"rgb(200,200,100)","brown",1), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)]))
+    :(new MultiRenderComponent(0,0,[ new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)])
     );
     this.addComponent(this.back);
     this.addComponent(new TransformComponent((Math.random())*500+2000,(Math.random())*900,Math.random(),(Math.random()-0.5)*3));
@@ -439,12 +442,12 @@ class Player extends Entity{
     this.matabolism = 2;
     this.shape =  [{x:x,y:y},{x:x+width,y:y},{x:x+width,y:y+height},{x:x,y:y+height}];
 
-    const tempIcon = new ScaledSpriteComponent("./graphics/icons/temprature.png",0,0,102,182,32,32);
-    const hungerIcon = new ScaledSpriteComponent("./graphics/icons/plate.png",0,0,182,182,32,32);
-    const healthIcon = new ScaledSpriteComponent("./graphics/icons/heart.png",0,0,182,182,32,32);
-     const tempIconSmall = new ScaledSpriteComponent("./graphics/icons/temprature.png",0,0,102,182,16,16);
-    const hungerIconSmall = new ScaledSpriteComponent("./graphics/icons/plate.png",0,0,182,182,16,16);
-    const healthIconSmall = new ScaledSpriteComponent("./graphics/icons/heart.png",0,0,182,182,16,16);
+    const tempIcon = new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",8,0,64,64,64,32);
+    const hungerIcon = new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",0,0,64,64,32,32);
+    const healthIcon = new ScaledSpriteComponent("./graphics/small sprites/heart.png",0,0,64,64,32,32);
+     const tempIconSmall = new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",4,0,64,64,32,16);
+    const hungerIconSmall = new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",0,0,64,64,16,16);
+    const healthIconSmall = new ScaledSpriteComponent("./graphics/small sprites/heart.png",0,0,64,64,16,16);
     const hungerHealth = new Mapping("health",[new Division(5,5,2),new Division(2,4,1),new Division(-1,1,0),new Division(-4,-2,-1),new Division(-5,-5,-2)],healthIconSmall);
     const hungerTemp = new Mapping("temp",[new Division(5,5,2),new Division(3,4,1),new Division(-4,3,0),new Division(-5,-5,-1)],tempIconSmall);
     const tempHealth = new Mapping("health",[new Division(6,6,-2),new Division(2,5,-1),new Division(-1,1,0),new Division(-5,-2,-1),new Division(-6,-6,-2)],healthIconSmall);
@@ -456,7 +459,7 @@ class Player extends Entity{
     this.temp = new StatBar(-40,0,-6,6,0,"temprature",tempIcon,[tempHealth]);
     this.hunger =  new StatBar(-120,0,-5,5,0,"hunger",hungerIcon,[hungerTemp,hungerHealth]);
     this.health = new StatBar(-200,0,0,10,5,"health",healthIcon);
-    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"white","navy"),this.eat.render,this.wear.render,this.burn.render,this.temp,this.hunger,this.health]));
+    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"grey","navy"),this.eat.render,this.wear.render,this.burn.render,this.temp,this.hunger,this.health]));
     this.addComponent(new TransformComponent(800,50,2000));
     this.addComponent(new Component("table"));
 
@@ -553,13 +556,13 @@ class Mapping{
 
 
      for(let i = 0; i < Math.abs(division.value); i++){
-        this.icon.draw(ctx,new TransformComponent(i*8+x, y-(i*8)-12, 0,0,1) );
+        this.icon.draw(ctx,new TransformComponent(i*8+x+6, y+(i*7)-12, 0,0,1) );
     }
     if(division.value < 0){
-      ctx.strokeStyle = "grey";
+      ctx.strokeStyle = "black";
       ctx.lineWidth = 4;
       ctx.moveTo(12,y)
-      ctx.lineTo(24,y)
+      ctx.lineTo(0,y)
       ctx.stroke();
     }
       ctx.strokeStyle = "black";
@@ -694,11 +697,11 @@ const row5 = 1050;
 const row6 = 1300;
 
 let itemDraw = new CardCollection(row4,bot,200,300,"Item Draw")
-let itemDiscard = new CardCollection(row5,top,200,300,"Item Discard","Item")
-let itemHand = new CardCollection(row1,bot,200,300,"Hand","Item",{x:48,y:0})
-let itemEat = new CardCollection(row1,top,200,300,"Eat","Item",{x:30,y:0})
-let itemWear = new CardCollection(row2,top,200,300,"Wear","Item",{x:30,y:0})
-let itemBurn = new CardCollection(row3,top,200,300,"Burn","Item",{x:30,y:0})
+let itemDiscard = new CardCollection(row5,top,200,300,"Item Discard","item")
+let itemHand = new CardCollection(row1,bot,200,300,"Hand","item",{x:48,y:0})
+let itemEat = new CardCollection(row1,top,200,300,"Eat","item",{x:30,y:0})
+let itemWear = new CardCollection(row2,top,200,300,"Wear","item",{x:30,y:0})
+let itemBurn = new CardCollection(row3,top,200,300,"Burn","item",{x:30,y:0})
 
 
 let weatherDraw = new CardCollection(row5-40,bot,200,300,"Weather Draw","Weather")
@@ -753,13 +756,13 @@ itemWear.userAction = function(){return weatherDiscard.cards.length < 12}
 itemHand.userAction = function(){return weatherDiscard.cards.length < 12}
 itemDraw.userAction = function(){weatherDraw.activate(); return true;}
 
-itemEat.cardAdded = function(card){player.updateEat(card.value.eat)}
-itemWear.cardAdded = function(card){player.updateWear(card.value.wear)}
-itemBurn.cardAdded = function(card){player.updateBurn(card.value.burn)}
-itemEat.cardRemoved = function(card){player.updateEat(-card.value.eat)}
-itemWear.cardRemoved = function(card){player.updateWear(-card.value.wear)}
+itemEat.cardAdded = function(card){player.updateEat(card.stats.eat.value)}
+itemWear.cardAdded = function(card){player.updateWear(card.stats.wear.value)}
+itemBurn.cardAdded = function(card){player.updateBurn(card.stats.burn.value)}
+itemEat.cardRemoved = function(card){player.updateEat(-card.stats.eat.value)}
+itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
 itemBurn.cardRemoved = function(card){
-  player.updateBurn(-card.value.burn)
+  player.updateBurn(-card.stats.burn.value)
   //itemBurn.addComponent(new ParticleEmitterComponent(.5, "dust",{x:0,y:0},itemBurn.shape));
   //itemBurn.addComponent(new TimerComponent(1000,function(){itemBurn.removeComponent("particleEmitter")}))
 }
@@ -797,10 +800,10 @@ weatherActive.addCardHook = function(card){
   }
 }
 weatherActive.cardAdded = function(card){
-  weather.update(card.value.wind,card.value.temp);
+  weather.update(card.stats.wind.value,card.stats.temp.value);
 }
 weatherActive.cardRemoved = function(card){
- // weather.update(-card.value.wind,-card.value.temp);
+ // weather.update(-card.stats.value.wind,-card.stats.value.temp);
 }
 
 
@@ -828,11 +831,52 @@ game.addEntity(weatherDiscard);
 itemDraw.addComponent(new TimerComponent(2000, dcm));
 weatherDraw.addComponent(new TimerComponent(2000, dcm));
 
-for(let i = 0; i < 52; i++){
-  let card = new Card();
-  game.addEntity(card);
-  itemDraw.addCard(card);
-}
+fetch('cards.json')
+  .then(response => response.json())
+  .then(data => {
+    // store card types
+    const cardTypes = {};
+    data.cardTypes.forEach(cardType => {
+      cardTypes[cardType.type] = {
+        backImage: cardType.backImage,
+        stats:{}
+      };
+      cardType.stats.forEach(stat => {
+        cardTypes[cardType.type].stats[stat.name] = stat.image;
+      });
+    });
+
+
+    const cards = data.cards.map(card => {
+      let cardData = {
+        name: card.name,
+        quantity: card.quantity,
+        type: card.type,
+        image:card.image,//new Image(),
+        stats: {}
+      };
+      //cardData.image.src = card.image;
+
+      Object.keys(cardTypes[card.type].stats).forEach(stat => {
+        cardData.stats[stat] = {
+          value: card[stat],
+          image: new Image()
+        };
+        cardData.stats[stat].image.src = cardTypes[card.type].stats[stat];
+      });
+      return cardData;
+    });
+    // the cards are now stored in the cards object
+ //     console.log(cards);
+    for(let card of cards){
+      let c = new Card(card.type, card.name, card.image,card.stats);
+      game.addEntity(c);
+      itemDraw.addCard(c);
+    }
+  });
+
+
+
 for(let i = 0; i < 24; i++){
   let card = new Card("Weather");
   game.addEntity(card);
