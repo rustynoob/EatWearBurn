@@ -76,6 +76,46 @@ dustParticles.addComponent(new ParticleTypeComponent("dust", dustUpdate, ));
 game.addEntity(dustParticles);
 
 // game code
+class Prop extends Component{
+  constructor(value,url){
+    super("render");
+
+      this.value = value;
+      this.image = new ScaledSpriteComponent(url,8,0,64,64,32,32);
+      this.x = 22;
+      this.y = 10;
+      this.imageWidth = 64;
+      this.imageHeight = 64;
+      this.renderWidth = 32;
+      this.renderHeight = 32;
+      this.rotation = 0;
+      this.width = this.renderWidth;
+      this.height = this.renderHeight;
+      this.position = 0;
+  }
+  draw(ctx,transform,dt){
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.rotate(transform.rotation);
+    ctx.scale(transform.scale, transform.scale);
+    for(let i = 0; i < Math.abs(this.value); i++){
+      this.image.draw(ctx,new TransformComponent((i%2)*this.width/3+this.x, this.y+(i*this.height/4)+this.position*this.renderHeight*1.2, 0,0,1) );
+    }
+    if(this.value < 0){
+      ctx.beginPath();
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.moveTo(this.x-14,this.y+this.position*this.renderHeight+20)
+      ctx.lineTo(this.x-2,this.y+this.position*this.renderHeight+20)
+      ctx.stroke();
+
+    }
+    ctx.restore();
+  }
+}
+
+
 class Card extends Entity{
   constructor(type = "item",name = "Card", image = "./graphics/large sprites/cabage.png",stats = (type == "item"?{
     eat:{value:Math.floor(Math.random()*7-2)},
@@ -91,27 +131,37 @@ class Card extends Entity{
     this.selected = false;
     this.pointer = {x:0,y:0,clicks:0,time:Date.now()};
     this.stats = stats;
+    let i = 0;
+    for (const key in stats) {
+      stats[key].position = i++;
+    }
+
     //`rgb(${Math.random()*123},${Math.random()*123},${Math.random()*123})`
 
     this.face =  (type == "item"?new MultiRenderComponent(0,0,[
-      new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
-      new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
-      new PolygonComponent(this.shape,"transparent","brown",10),
-      //new ScaledSpriteComponent("./graphics/large sprites/card.png",0,0,200,300,200,300, 0),
-      new TextComponent(""+this.stats.eat.value+ " eat","sans-serif",28,"brown","left",-10,-30),
-      new TextComponent(""+this.stats.wear.value+" wear","sans-serif",29,"brown","left",-10,-60),
-      new TextComponent(""+this.stats.burn.value+" burn","sans-serif",30,"brown","left",-10,-90),
-      this.name
+        new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
+        new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
+        new PolygonComponent(this.shape,"transparent","brown",8),
+        this.stats.eat,
+        this.stats.wear,
+        this.stats.burn//,
+       // this.name
       ]):new MultiRenderComponent(0,0,[
-      new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
-      new TextComponent(""+this.stats.wind.value+ " wind","sans-serif",30,"darkblue","left",-10,-20),
-      new TextComponent(""+this.stats.wind.value+ " wind","sans-serif",30,"darkblue","left",-10,-20),
-      new TextComponent(""+this.stats.temp.value+" temp","sans-serif",30,"darkblue","left",-10,-40),
-      this.name
+        new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
+        new PolygonComponent(this.shape,"transparent","blue",8),
+        this.stats.wind,
+        this.stats.temp//,
+//        this.name
       ]));
     this.back =
-    (type == "item")?(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"rgb(200,200,100)","brown",1), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)]))
-    :(new MultiRenderComponent(0,0,[ new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1), new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)])
+      (type == "item")?(new MultiRenderComponent(0,0,[
+        new PolygonComponent(this.shape,"rgb(200,200,100)","brown",1),
+        new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)
+      ]))
+      :(new MultiRenderComponent(0,0,[
+        new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1),
+        new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)
+      ])
     );
     this.addComponent(this.back);
     this.addComponent(new TransformComponent((Math.random())*500+2000,(Math.random())*900,Math.random(),(Math.random()-0.5)*3));
@@ -249,8 +299,11 @@ class CardCollection extends Entity{
     this.target = {stack:this,count:0,shuffel:false};
     this.face = "up";
     this.mouseOver = false;
-    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"transparent","rgb(0,30,0)"),new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,0)","center",-100,-40,200)]));
-    this.addComponent(new TransformComponent(x,y,Math.random()));
+    this.addComponent(new MultiRenderComponent(0,0,[
+      new PolygonComponent(this.shape,"transparent","rgb(0,30,0)"),
+      new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,0)","center",-100,-40,200)
+    ]));
+    this.addComponent(new TransformComponent(x,y,-Math.random()));
     this.addComponent(new Component("table"));
     this.addComponent(new Component("hand"));
     this.addComponent(new CollisionComponent(this.shape));
@@ -699,9 +752,9 @@ let itemWear = new CardCollection(row2,top,200,300,"Wear","item",{x:30,y:0})
 let itemBurn = new CardCollection(row3,top,200,300,"Burn","item",{x:30,y:0})
 
 
-let weatherDraw = new CardCollection(row5-40,bot,200,300,"Weather Draw","Weather")
-let weatherActive = new CardCollection(row6-50,bot,200,300,"Weather Active","Weather",{x:30,y:0})
-let weatherDiscard = new CardCollection(row6,top,200,300,"Weather Discard","Weather")
+let weatherDraw = new CardCollection(row5-40,bot,200,300,"Weather Draw","weather")
+let weatherActive = new CardCollection(row6-50,bot,200,300,"Weather Active","weather",{x:30,y:0})
+let weatherDiscard = new CardCollection(row6,top,200,300,"Weather Discard","weather")
 
 //itemBurn.addComponent(new ParticleEmitterComponent(.1, "dust",{x:0,y:0},itemBurn.shape));
 
@@ -802,9 +855,8 @@ game.addEntity(weatherDraw);
 game.addEntity(weatherActive);
 game.addEntity(weatherDiscard);
 
-itemDraw.addComponent(new TimerComponent(2000, dcm));
-weatherDraw.addComponent(new TimerComponent(2000, dcm));
 
+let cardList = [];
 fetch('cards.json')
   .then(response => response.json())
   .then(data => {
@@ -832,37 +884,39 @@ fetch('cards.json')
       //cardData.image.src = card.image;
 
       Object.keys(cardTypes[card.type].stats).forEach(stat => {
-        cardData.stats[stat] = {
-          value: parseInt(card[stat],10),
-          image: new Image()
-        };
-        cardData.stats[stat].image.src = cardTypes[card.type].stats[stat];
+        cardData.stats[stat] = new Prop(parseInt(card[stat],10),cardTypes[card.type].stats[stat]);//  new Image()
+
+
+        //  value: parseInt(card[stat],10),
+        //  image: cardTypes[card.type].stats[stat];//  new Image()
+        //};
+        //cardData.stats[stat].image.src = cardTypes[card.type].stats[stat];
       });
       return cardData;
     });
     // the cards are now stored in the cards object
  //     console.log(cards);
     for(let card of cards){
-      let c = new Card(card.type, card.name, card.image);//,card.stats);
+      let c = new Card(card.type, card.name, card.image,card.stats);
       game.addEntity(c);
-      itemDraw.addCard(c);
+      cardList.push(c)
+      c.addComponent(new TimerComponent(2000,initCard));
+
     }
   });
 
-
-
-for(let i = 0; i < 24; i++){
-  let card = new Card("Weather");
-  game.addEntity(card);
-  weatherDraw.addCard(card);
+function initCard(c){
+  //for (let c of cardList){
+    if(c.type == "item"){
+      itemDraw.addCard(c);
+      itemDraw.shuffel();
+    }
+    else{
+      weatherDraw.addCard(c);
+      weatherDraw.shuffel();
+      }
+  //}
 }
-
-
-
-function dcm(entity){
-  entity.arrangeCards();
-}
-
 
 
 
