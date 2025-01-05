@@ -99,7 +99,7 @@ class Prop extends Component{
     ctx.rotate(transform.rotation);
     ctx.scale(transform.scale, transform.scale);
     for(let i = 0; i < Math.abs(this.value); i++){
-      this.image.draw(ctx,new TransformComponent((i%2)*this.width/3+this.x, this.y+(i*this.height/4)+this.position*this.renderHeight*1.2, 0,0,1) );
+      this.image.draw(ctx,new TransformComponent((i%2)*this.width/3+this.x+i, this.y+(i*this.height/4)+this.position*this.renderHeight*1.2, 0,0,1) );
     }
     if(this.value < 0){
       ctx.beginPath();
@@ -429,16 +429,24 @@ class CardCollection extends Entity{
     return false;
   }
 }
-/*
-class Counter extends Entity{
-  constructor(){
-    super("counter");
+
+class Tutorial extends Entity {
+  constructor(x,y,image){
+    super("tutorial");
+    this.addComponent(new TransformComponent(x,y,1000))
+    this.addComponent(image);// this should be a render component
   }
-  this.addComponent(new TransformComponent());
-  this.addComponent(new CircleComponent(0,0,10,`rgb(${Math.random()*123},${Math.random()*123},${Math.random()*123})`));
-  this.addCompenent(new Component("table"));
+  trigger(delay){
+    this.addComponent(new TimerComponent(delay, this.show.bind(this)));
+  }
+  show(){
+    this.addComponent(new Component("table"));
+  }
+  hide(){
+    this.removeComponent("table");
+  }
 }
-*/
+
 
 class Stat{
   constructor(legend,x,y,color){
@@ -735,6 +743,14 @@ class StatBar extends Component{
 const player = new Player()
 game.addEntity(player);
 
+let startGame = new Tutorial(1100,500,new ScaledSpriteComponent("./graphics/large sprites/right.png",0,0,256,256,256,256));
+
+let playCards = new Tutorial(360,300,new MultiRenderComponent(0,0,[new ScaledSpriteComponent("./graphics/large sprites/rightup.png",-40,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/up.png",0,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/leftup.png",75,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/coat.png",30,83,256,256,200,200),new ScaledSpriteComponent("./graphics/large sprites/drumbstick.png",140,80,256,256,150,150),new ScaledSpriteComponent("./graphics/large sprites/fire.png",-100,90,256,256,170,170)]));
+startGame.trigger(10000);
+game.addEntity(startGame);
+game.addEntity(playCards);
+
+
 const top = 50;
 const bot = 400;
 const row1 = 50;
@@ -791,8 +807,18 @@ itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
 itemBurn.cardRemoved = function(card){player.updateBurn(-card.stats.burn.value)}
 itemHand.addCardHook = function(card){
   return (card.stack.name != itemDraw.name);
+}
+itemHand.cardRemoved = function(card){
+    startGame.hide();
+  playCards.hide();
+
+  playCards.trigger(20000);
+  startGame.trigger(60000);
 
 }
+
+
+
 
 weatherActive.userAction = function(){
   if( this.cards.length < 4){
@@ -807,10 +833,12 @@ weatherActive.addCardHook = function(card){
   player.hunger.setRelative(player.eat.get()-player.matabolism);
   player.temp.setRelative((((Math.max(1,weather.wind.get()-player.wear.get())*weather.temp.get())+player.burn.get()))+player.hunger.get("temp"));
   player.health.setRelative(player.temp.get("health")+player.hunger.get("health"));
-
+  playCards.hide();
+  startGame.hide();
   itemEat.manAct();
   itemBurn.manAct();
-
+  playCards.trigger(20000);
+  startGame.trigger(60000);
   if(this.cards.length <= 0){
     itemDraw.manAct();
     player.reset();
