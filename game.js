@@ -437,12 +437,14 @@ class Tutorial extends Entity {
     this.addComponent(image);// this should be a render component
   }
   trigger(delay){
+    this.removeComponent("timer");
     this.addComponent(new TimerComponent(delay, this.show.bind(this)));
   }
   show(){
     this.addComponent(new Component("table"));
   }
   hide(){
+    this.removeComponent("timer");
     this.removeComponent("table");
   }
 }
@@ -809,10 +811,10 @@ itemHand.addCardHook = function(card){
   return (card.stack.name != itemDraw.name);
 }
 itemHand.cardRemoved = function(card){
-    startGame.hide();
+  startGame.hide();
   playCards.hide();
 
-  playCards.trigger(20000);
+  playCards.trigger(40000);
   startGame.trigger(60000);
 
 }
@@ -833,25 +835,35 @@ weatherActive.addCardHook = function(card){
   player.hunger.setRelative(player.eat.get()-player.matabolism);
   player.temp.setRelative((((Math.max(1,weather.wind.get()-player.wear.get())*weather.temp.get())+player.burn.get()))+player.hunger.get("temp"));
   player.health.setRelative(player.temp.get("health")+player.hunger.get("health"));
-  playCards.hide();
-  startGame.hide();
+
+
   itemEat.manAct();
   itemBurn.manAct();
-  playCards.trigger(20000);
-  startGame.trigger(60000);
+
+
   if(this.cards.length <= 0){
     itemDraw.manAct();
     player.reset();
   }
+
+
   if(!this.cards.includes(card) && this.cards.length >= 4 ){
-    //card.addComponent(new TimerComponent(1000,function(){weatherActive.addCard(card);}))
+
     this.activate();
     itemDraw.manAct();
     if(weatherDiscard.activate()){
-
+      playCards.hide();
+      startGame.hide();
+      startGame.trigger(2000);
       return true;
     }
     //return true;
+  }
+  else{
+     playCards.hide();
+      startGame.hide();
+    playCards.trigger(2000);
+    startGame.trigger(6000);
   }
 }
 weatherActive.cardAdded = function(card){
