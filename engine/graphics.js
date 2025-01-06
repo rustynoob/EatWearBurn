@@ -200,7 +200,7 @@ export class ScaledSpriteComponent extends Component {
     // Draw the image on the canvas at the transform position
    ctx.save();
         ctx.translate(transform.x-this.x, transform.y-this.y);
-        ctx.rotate(this.rotation);
+        ctx.rotate(transform.rotation + this.rotation);
         ctx.translate(-this.x, -this.y);
         ctx.scale(transform.scale, transform.scale);
      ctx.drawImage(
@@ -668,7 +668,7 @@ export class RenderSystem extends System{
     // Get the main canvas and its context
     const mainCtx = this.ctx;
     // Clear the canvas
-    mainCtx.fillStyle = 'rgb(0,100,0)';
+    mainCtx.fillStyle = 'rgb(0,0,0)';
     mainCtx.fillRect(0, 0, canvas.width, canvas.height);
    // Draw the back buffers to the main canvas
     for (const entity of sortedCameras) {

@@ -138,23 +138,7 @@ export class UISystem extends System{
   }
   pointerCancelHandler(event) {
   event.preventDefault();
- /*
-     const touch = this.ongoingEvents.get(event.type);
 
-    if (!touch) {
-      console.error(`Cancel: Could not find touch ${event.pointerId}`);
-      return;
-    }
-
-    const newTouch = {
-      x: event.pageX,
-      y: event.pageY,
-      id: event.pointerId,
-      action: "move",
-      type: "pointer"
-    };
-    this.ongoingEvents.set(event.pointerId, newTouch);// this will overwrite the start event
-    //*/
   }
 
   update(entities) {
@@ -227,13 +211,15 @@ export class UISystem extends System{
                         regesteredEvent.callback(entity,scaledInput);
                       }
                     }
-                    else if(pointInPolygon(mouseEntity, polygon)){
-                      // if event has callback
-                      if(regesteredEvent.callback){
-                        regesteredEvent.callback(entity, scaledInput);
+                    else {
+                      if(pointInPolygon(mouseEntity, polygon)){
+                        // if event has callback
+                        if(regesteredEvent.callback){
+                          regesteredEvent.callback(entity, scaledInput);
+                        }
+                        // consume event
+                        this.ongoingEvents.delete(input.type);
                       }
-                      // consume event
-                      this.ongoingEvents.delete(input.type);
                     }
                   }
                 }

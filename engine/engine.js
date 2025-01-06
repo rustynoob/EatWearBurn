@@ -168,7 +168,7 @@ export class System{
   }
 }
 export class Game {
-  constructor(name, canvas, width, height, targetFrameTime = 60) {
+  constructor(name, canvas, width, height, targetFrameTime = 90) {
     this.entities = new Set();
     this.systems = new Map();
     this.name = name || "untitled";

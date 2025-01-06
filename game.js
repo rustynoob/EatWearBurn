@@ -1,6 +1,6 @@
 import {debug, Entity, Component, DeleteComponent, TransformComponent, Game}
 from './engine/engine.js';
-import {ParticleEmitterComponent, ParticleSystem, ParticleInteractorComponent , ParticleTypeComponent, ParticleBurstComponent}
+import {ParticleEmitterComponent, ParticleSystem, ParticleInteractorComponent , ParticleTypeComponent, ParticleBurstComponent,Particle}
 from './engine/particles.js';
 import { CollisionSystem, CollisionComponent }
 from './engine/collision.js';
@@ -35,19 +35,18 @@ const eventList = [{key:"Digit1",id:"systems"},{key:"Backquote",id:"overlay"},{k
 const uii = new UISystem(eventList);
 
 //game.addSystem(musicSystem,2);
-game.addSystem(ses,2);
+game.addSystem(ses,4);
 game.addSystem(uii,0);
 game.addSystem(new ParticleSystem(),0);
-game.addSystem(new AnimationSystem(),1);
+game.addSystem(new AnimationSystem(),0);
 game.addSystem(new RenderSystem(game),0);
-game.addSystem(new CollisionSystem(), 1)
-game.addSystem(new TimerSystem(),0)
+game.addSystem(new CollisionSystem(), 3)
+game.addSystem(new TimerSystem(),2)
 const jukeBox = new Entity("audio");
 //const music = new MusicComponent("./music/GameMusic.mp3",["happy", "phrase", "high", "F"]);
 //jukeBox.addComponent(music);
 jukeBox.addComponent(new CameraComponent("table",0,0,10,1550,750,.25));
-jukeBox.addComponent(new TransformComponent());
-
+jukeBox.addComponent(new TransformComponent())
 game.addEntity(debug);
 
 debug.addComponent(new UIComponent([
@@ -60,23 +59,72 @@ debug.addComponent(new UIComponent([
 ]));
 
 game.addEntity(jukeBox);
-
-
+/*
+constructor(position, velocity, acceleration, direction, color, size, lifetime, type, radius) {
+    this.position = position ||  new Vector({x:0,y:0});
+    this.velocity = velocity ||  new Vector({x:0,y:0})
+    this.acceleration = acceleration||  new Vector({x:0,y:0})
+    this.direction = direction||  new Vector({x:0,y:0})
+    this.color = color || {r: 185, g:128, b:0, a:1};
+    this.size = size || 2;
+    this.lifetime = lifetime || 151200;
+    this.type = type;
+    this.radius = radius || 40;
+    this.markedForDeletion = false;
+  }
+*/
 function dustUpdate(particle, dt) {
   // Update the particle's position based on its velocity and acceleration
- particle.position.x += particle.velocity.x * dt/10;
-  particle.position.y -= Math.abs(particle.velocity.y) * dt/2;
-  particle.radius += 0.03*dt;
-  particle.color.a = particle.lifetime/(1000*3);
+  const scaler = 0.1
+ particle.position.x += particle.velocity.x * dt*scaler;
+  particle.position.y += Math.abs(particle.velocity.y) * dt*scaler;
+  particle.velocity.x += (Math.random()-0.5)*scaler;
+  particle.velocity.y += (Math.random()-0.5)*scaler;
+  particle.direction += particle.acceleration.x*scaler;
+  if ((particle.velocity.x < 0 && particle.position.x < 0)||particle.velocity.x > 0 && particle.position.y > 1550){
+    particle.markFdForDeletion = true;
+  }
+ // particle.direction += Math.random();
 }
-const dustParticles = new Entity("particles");
-dustParticles.addComponent(new Component("table"));
-dustParticles.addComponent(new TransformComponent(0,0,1));
-dustParticles.addComponent(new ParticleTypeComponent("dust", dustUpdate, ));
-game.addEntity(dustParticles);
+const snow = new Entity("particles");
+const snowFlake = new Particle({x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:1},false,1,10000,"snow",3)
+snow.addComponent(new Component("table"));
+snow.addComponent(new TransformComponent(0,0,0));
+snow.addComponent(new ParticleTypeComponent("snow", dustUpdate, new ScaledSpriteComponent("./graphics/small sprites/snow2.png",16,16,64,64,32,32,0),snowFlake));
+game.addEntity(snow);
 
+const snowMachine = new ParticleEmitterComponent(0.001, "snow", {x:0,y:0}, [{x:-100,y:-100},{x:1650,y:-100},{x:1650,y:750},{x:1550,y:750},{x:1550,y:0},{x:0,y:0},{x:0,y:750},{x:-100,y:750}],20000);
+snow.addComponent(snowMachine);
+
+class Cursor extends Entity{
+  constructor(){
+    super("cursor");
+    this.addComponent(new TransformComponent());
+    this.addComponent(new CollisionComponent(generatePolygon(3,3)));
+    this.ui = new UIComponent();
+    this.ui.regesterCallback("pointer",this.updatePosition.bind(this));
+    this.addComponent(this.ui);
+    this.addComponent(new ParticleInteractorComponent(this.onCollisionFn));
+
+
+  }
+  onColision(entity,particle){
+    const transform = this.getComponent("transform");
+    particle.velocity.x = 0;
+    particle.velocity.y = 0;
+    particle.position.x = transform.x;
+    particle.position.y = transform.y;
+  }
+
+  updatePosition(caller,event){
+    const transform = this.getComponent("transform");
+    transform.x = event.x;
+    transform.y = event.y;
+  }
+}
+//game.addEntity(new Cursor)
 // game code
-class Prop extends Component{
+class Stat extends Component{
   constructor(value,url){
     super("render");
 
@@ -92,6 +140,8 @@ class Prop extends Component{
       this.width = this.renderWidth;
       this.height = this.renderHeight;
       this.position = 0;
+      this.groupCount = 5;
+      this.groupWidth = 2
   }
   draw(ctx,transform,dt){
     ctx.save();
@@ -99,9 +149,12 @@ class Prop extends Component{
     ctx.rotate(transform.rotation);
     ctx.scale(transform.scale, transform.scale);
     for(let i = 0; i < Math.abs(this.value); i++){
-      this.image.draw(ctx,new TransformComponent((i%2)*this.width/3+this.x+i, this.y+(i*this.height/4)+this.position*this.renderHeight*1.2, 0,0,1) );
+      this.image.draw(ctx,new TransformComponent(
+        (Math.floor(i/this.groupCount)*this.renderWidth*1.2)+((i%this.groupWidth)*this.width/3)+this.x+i,
+        this.y+(i%this.groupCount*this.height/4)+this.position*this.renderHeight*1.5,
+        0,0,1));
     }
-    if(this.value < 0){
+    if(false &&this.value < 0){
       ctx.beginPath();
 
       ctx.strokeStyle = "black";
@@ -113,7 +166,17 @@ class Prop extends Component{
     }
     ctx.restore();
   }
+  get(){
+    return this.value;
+  }
+  set(value){
+    this.value = value;
+  }
+  setRelative(value){
+    this.value+= value;
+  }
 }
+
 
 
 class Card extends Entity{
@@ -139,7 +202,7 @@ class Card extends Entity{
     //`rgb(${Math.random()*123},${Math.random()*123},${Math.random()*123})`
 
     this.face =  (type == "item"?new MultiRenderComponent(0,0,[
-        new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
+        new PolygonComponent(this.shape,"rgb(200,200,100)","brown",1),
         new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
         new PolygonComponent(this.shape,"transparent","brown",8),
         this.stats.eat,
@@ -147,19 +210,21 @@ class Card extends Entity{
         this.stats.burn//,
        // this.name
       ]):new MultiRenderComponent(0,0,[
-        new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
-        new PolygonComponent(this.shape,"transparent","blue",8),
+        new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1),
+        new PolygonComponent(this.shape,"transparent","darkblue",8),
         this.stats.wind,
         this.stats.temp//,
 //        this.name
       ]));
     this.back =
       (type == "item")?(new MultiRenderComponent(0,0,[
-        new PolygonComponent(this.shape,"rgb(200,200,100)","brown",1),
+     //   new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
+       new PolygonComponent(this.shape,"rgb(150,150,50)","brown",1),
         new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)
       ]))
       :(new MultiRenderComponent(0,0,[
-        new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1),
+   //     new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
+        new PolygonComponent(this.shape,"rgb(50,50,155)","darkblue",1),
         new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)
       ])
     );
@@ -220,7 +285,7 @@ class Card extends Entity{
             caller.homeTransform =  new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
             caller.pointer.x = event.x
             caller.pointer.y = event.y;
-            caller.addComponent(new SoundEffectComponent("pickup","play"));
+           // caller.addComponent(new SoundEffectComponent("pickup","play"));
             caller.pointer.time = time;
             transform.z += Math.random();
           }
@@ -255,7 +320,7 @@ class Card extends Entity{
     }
 }
 function resetClick(entity){
-  entity.addComponent(new SoundEffectComponent("drop","play"))
+//  entity.addComponent(new SoundEffectComponent("drop","play"))
   entity.selected = false;
   let transform = entity.getComponent("transform");
  // const t = new TransformComponent(transform.x, transform.y, transform.z, transform.rotation, transform.scale );
@@ -289,20 +354,25 @@ function cardOnCard(self,other){
 
 // hand
 class CardCollection extends Entity{
-  constructor(x=0,y=0,width=200,height = 200, name = "stack", type = "Item",spacing = {x:0.3,y:-0.3}){
+  constructor(x=0,y=0,width=200,height = 200, name = "stack", type = "Item",spacing = {x:0.3,y:-0.3},max = 1){
     super("stack");
     this.cards = [];
     this.name = name;
     this.type = type;
-    this.spacing = spacing
-    this.shape =  [{x:0,y:0},{x:width,y:0},{x:width,y:height},{x:0,y:height}];
+    this.spacing = spacing;
+    this.max = max;
+    this.shape =  [{x:0,y:0},{x:width,y:0},{x:width,y:300},{x:0,y:300}];
     this.target = {stack:this,count:0,shuffel:false};
     this.face = "up";
     this.mouseOver = false;
-    this.addComponent(new MultiRenderComponent(0,0,[
-      new PolygonComponent(this.shape,"transparent","rgb(0,30,0)"),
-      new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,0)","center",-100,-40,200)
-    ]));
+    this.render = [new PolygonComponent(this.shape,"transparent","rgb(0,30,60)"),
+      new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,60)","center",-100,-40,200)
+    ];
+    for(let i = 0; i < this.max-1; i++){
+      let lineX = 200+((width-200)/(max-1)*i);
+      this.render.push(new LineComponent("rgb(0,30,60)",2,0,0,lineX,0,lineX,300))
+    }
+    this.addComponent(new MultiRenderComponent(0,0,this.render));
     this.addComponent(new TransformComponent(x,y,-Math.random()));
     this.addComponent(new Component("table"));
     this.addComponent(new Component("hand"));
@@ -435,6 +505,16 @@ class Tutorial extends Entity {
     super("tutorial");
     this.addComponent(new TransformComponent(x,y,1000))
     this.addComponent(image);// this should be a render component
+    this.addComponent(new CollisionComponent(generatePolygon(3,3)));
+    this.ui = new UIComponent();
+    this.ui.regesterCallback("pointer",this.reset.bind(this));
+    this.addComponent(this.ui);
+  }
+  reset(){
+    if(this.hasComponent("table")){
+      this.hide();
+      this.trigger(60000);
+    }
   }
   trigger(delay){
     this.removeComponent("timer");
@@ -449,7 +529,7 @@ class Tutorial extends Entity {
   }
 }
 
-
+/*
 class Stat{
   constructor(legend,x,y,color){
     this.value = new TextComponent(0,"sans",40, color,"left",0,-42);
@@ -463,41 +543,14 @@ class Stat{
     this.value.content = value;
   }
 }
-class Weather extends Entity{
-  constructor(){
-    super("weather");
-    const x = 0;
-    const y = 0;
-    const width = 300;
-    const height = 320;
-    this.shape =  [{x:x,y:y},{x:x+width,y:y},{x:x+width,y:y+height},{x:x,y:y+height}];
-    this.wind = new Stat("Wind: ",-220,0,"blue");
-    this.temp = new Stat("Temprature: ",-220,-42,"blue");
-    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"white","navy"),this.wind.render,this.temp.render]));
-    this.addComponent(new TransformComponent(1250,40,2000));
-    this.addComponent(new Component("table"));
-
-  }
-  reset(){
-    this.wind.set(0);
-    this.temp.set(0);
-  }
-  update(wind, temp){
-    this.wind.set(this.wind.get()+wind);
-    this.temp.set(this.temp.get()+temp);
-  }
-}
-const weather = new Weather()
-game.addEntity(weather);
-
+*/
 class Player extends Entity{
   constructor(){
     super("player");
     const x = -10;
     const y = -10;
-    const width = 475;
+    const width = 625;
     const height = 320;
-    this.matabolism = 2;
     this.shape =  [{x:x,y:y},{x:x+width,y:y},{x:x+width,y:y+height},{x:x,y:y+height}];
 
     const tempIcon = new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",8,0,64,64,64,32);
@@ -508,17 +561,34 @@ class Player extends Entity{
     const healthIconSmall = new ScaledSpriteComponent("./graphics/small sprites/heart.png",0,0,64,64,16,16);
     const hungerHealth = new Mapping("health",[new Division(5,5,2),new Division(2,4,1),new Division(-1,1,0),new Division(-4,-2,-1),new Division(-5,-5,-2)],healthIconSmall);
     const hungerTemp = new Mapping("temp",[new Division(5,5,2),new Division(3,4,1),new Division(-4,3,0),new Division(-5,-5,-1)],tempIconSmall);
-    const tempHealth = new Mapping("health",[new Division(6,6,-2),new Division(2,5,-1),new Division(-1,1,0),new Division(-5,-2,-1),new Division(-6,-6,-2)],healthIconSmall);
+    const tempHealth = new Mapping("health",[new Division(6,6,-2),new Division(2,5,-1),new Division(-1,1,0),new Division(-4,-2,-1),new Division(-5,-5,-2),new Division(-6,-6,-3)],healthIconSmall);
+    const tempHunger = new Mapping("hunger",[new Division(-2,6,-2),new Division(-5,-3,-3),new Division(-6,-6,-4)],hungerIconSmall);
 
-
-    this.eat = new Stat("Eat: ",-400,0,"blue");
-    this.wear = new Stat("Wear: ",-400,-42,"blue");
-    this.burn = new Stat("Burn: ",-400,-84,"blue");
-    this.temp = new StatBar(-40,0,-6,6,0,"temprature",tempIcon,[tempHealth]);
-    this.hunger =  new StatBar(-120,0,-5,5,0,"hunger",hungerIcon,[hungerTemp,hungerHealth]);
-    this.health = new StatBar(-200,0,0,10,5,"health",healthIcon);
-    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"grey","navy"),this.eat.render,this.wear.render,this.burn.render,this.temp,this.hunger,this.health]));
-    this.addComponent(new TransformComponent(800,50,2000));
+    this.wind = new Stat(1,"./graphics/small sprites/wind.png");
+    this.wind.position = 1;
+    this.cold = new Stat(1,"./graphics/small sprites/snow2.png");
+    this.cold.position = 2;
+    this.eat = new Stat(1,"./graphics/small sprites/drumbstick.png");
+    this.eat.position = 0;
+    this.wear = new Stat(1,"./graphics/small sprites/coat.png");
+    this.wear.position = 1;
+    this.burn = new Stat(1,"./graphics/small sprites/fire.png");
+    this.burn.position = 3
+    this.temp = new StatBar(-400,0,-6,6,0,"temp",tempIcon,[tempHealth,tempHunger]);
+    this.hunger =  new StatBar(-200,0,-5,5,0,"hunger",hungerIcon,[hungerTemp,hungerHealth]);
+    this.health = new StatBar(-300,0,0,10,5,"health",healthIcon);
+    this.addComponent(new MultiRenderComponent(0,0,[
+      new PolygonComponent(this.shape,"rgb(100,100,100)","navy"),
+      this.eat,
+      this.burn,
+      this.wind,
+      this.wear,
+      this.cold,
+      this.temp,
+      this.hunger,
+      this.health
+    ]));
+    this.addComponent(new TransformComponent(925,50,2000));
     this.addComponent(new Component("table"));
 
   }
@@ -529,6 +599,8 @@ class Player extends Entity{
     this.temp.reset();
     this.hunger.reset();
     this.health.reset();
+    this.wind.set(0);
+    this.cold.set(0);
   }
   updateEat(value){
     this.eat.set(this.eat.get()+value);
@@ -538,6 +610,12 @@ class Player extends Entity{
   }
   updateBurn(value){
     this.burn.set(this.burn.get()+value);
+  }
+  update(wind, temp){
+    this.wind.set(this.wind.get()+wind);
+    this.cold.set(this.cold.get()+temp);
+    snowMachine.emissionRate = Math.abs(this.temp.get())*0.002;
+    snowFlake.velocity.x = this.wind.get()*2;
   }
 }
 
@@ -614,7 +692,7 @@ class Mapping{
 
 
      for(let i = 0; i < Math.abs(division.value); i++){
-        this.icon.draw(ctx,new TransformComponent(i*8+x+6, y+(i*7)-12, 0,0,1) );
+        this.icon.draw(ctx,new TransformComponent((i%2*8+x+6)+(i*1), y+(i*7)-12, 0,0,1) );
     }
     if(division.value < 0){
       ctx.strokeStyle = "black";
@@ -747,7 +825,7 @@ game.addEntity(player);
 
 let startGame = new Tutorial(1100,500,new ScaledSpriteComponent("./graphics/large sprites/right.png",0,0,256,256,256,256));
 
-let playCards = new Tutorial(360,300,new MultiRenderComponent(0,0,[new ScaledSpriteComponent("./graphics/large sprites/rightup.png",-40,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/up.png",0,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/leftup.png",75,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/coat.png",30,83,256,256,200,200),new ScaledSpriteComponent("./graphics/large sprites/drumbstick.png",140,80,256,256,150,150),new ScaledSpriteComponent("./graphics/large sprites/fire.png",-100,90,256,256,170,170)]));
+let playCards = new Tutorial(360,300,new MultiRenderComponent(0,0,[new ScaledSpriteComponent("./graphics/large sprites/rightup.png",-80,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/up.png",-15,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/leftup.png",75,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/coat.png",10,83,256,256,200,200),new ScaledSpriteComponent("./graphics/large sprites/drumbstick.png",140,80,256,256,150,150),new ScaledSpriteComponent("./graphics/large sprites/fire.png",-140,90,256,256,170,170)]));
 startGame.trigger(10000);
 game.addEntity(startGame);
 game.addEntity(playCards);
@@ -755,23 +833,23 @@ game.addEntity(playCards);
 
 const top = 50;
 const bot = 400;
-const row1 = 50;
-const row2 = 300;
-const row3 = 550;
+const row1 = 40;
+const row2 = 340;
+const row3 = 640;
 const row4 = 800;
 const row5 = 1050;
 const row6 = 1300;
 
 let itemDraw = new CardCollection(row4,bot,200,300,"Item Draw")
 let itemDiscard = new CardCollection(row5,top,200,300,"Item Discard","item")
-let itemHand = new CardCollection(row1,bot,200,300,"Hand","item",{x:48,y:0})
-let itemEat = new CardCollection(row1,top,200,300,"Eat","item",{x:30,y:0})
-let itemWear = new CardCollection(row2,top,200,300,"Wear","item",{x:30,y:0})
-let itemBurn = new CardCollection(row3,top,200,300,"Burn","item",{x:30,y:0})
+let itemHand = new CardCollection(row1,bot,728,300,"Hand","item",{x:48,y:0},12)
+let itemEat = new CardCollection(row1,top,260,300,"Eat","item",{x:30,y:0},3)
+let itemWear = new CardCollection(row2,top,260,300,"Wear","item",{x:30,y:0},3)
+let itemBurn = new CardCollection(row3,top,260,300,"Burn","item",{x:30,y:0},3)
 
 
 let weatherDraw = new CardCollection(row5-40,bot,200,300,"Weather Draw","weather")
-let weatherActive = new CardCollection(row6-50,bot,200,300,"Weather Active","weather",{x:30,y:0})
+let weatherActive = new CardCollection(row6-70,bot,320,300,"Weather Active","weather",{x:40,y:0},4)
 let weatherDiscard = new CardCollection(row6,top,200,300,"Weather Discard","weather")
 
 //itemBurn.addComponent(new ParticleEmitterComponent(.1, "dust",{x:0,y:0},itemBurn.shape));
@@ -793,7 +871,11 @@ itemDraw.face = "down";
 weatherDraw.face = "down";
 
 
-
+itemDiscard.userAction = function (){
+  for(let card of this.cards){
+    card.played = false;
+  }
+}
 itemEat.userAction = function(){return true;};
 itemWear.userAction = function(){return true;};
 itemBurn.userAction = function(){return true;};
@@ -807,8 +889,17 @@ itemBurn.cardAdded = function(card){player.updateBurn(card.stats.burn.value)}
 itemEat.cardRemoved = function(card){player.updateEat(-card.stats.eat.value)}
 itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
 itemBurn.cardRemoved = function(card){player.updateBurn(-card.stats.burn.value)}
+itemEat.addCardHook = function(card){
+  return (this.cards.length >= 3);
+}
+itemWear.addCardHook = function(card){
+  return (this.cards.length >= 3);
+}
+itemBurn.addCardHook = function(card){
+  return (this.cards.length >= 3);
+}
 itemHand.addCardHook = function(card){
-  return (card.stack.name != itemDraw.name);
+  return (card.played);
 }
 itemHand.cardRemoved = function(card){
   startGame.hide();
@@ -826,19 +917,23 @@ weatherActive.userAction = function(){
   if( this.cards.length < 4){
     return true
   }
-  weather.reset();
+  player.wind.set(0);
+  player.cold.set(0)
+  // player.reset();
   //itemDraw.activate();
 
 }
 
 weatherActive.addCardHook = function(card){
-  player.hunger.setRelative(player.eat.get()-player.matabolism);
-  player.temp.setRelative((((Math.max(1,weather.wind.get()-player.wear.get())*weather.temp.get())+player.burn.get()))+player.hunger.get("temp"));
+  player.hunger.setRelative( player.eat.get()+player.temp.get("hunger"));
+  player.temp.setRelative((((Math.max(1,player.wind.get()-player.wear.get())*player.cold.get())+player.burn.get()))+player.hunger.get("temp"));
   player.health.setRelative(player.temp.get("health")+player.hunger.get("health"));
-
 
   itemEat.manAct();
   itemBurn.manAct();
+  for(let card of itemWear.cards){
+    card.played = true;
+  }
 
 
   if(this.cards.length <= 0){
@@ -854,7 +949,7 @@ weatherActive.addCardHook = function(card){
     if(weatherDiscard.activate()){
       playCards.hide();
       startGame.hide();
-      startGame.trigger(2000);
+      startGame.trigger(20000);
       return true;
     }
     //return true;
@@ -862,12 +957,12 @@ weatherActive.addCardHook = function(card){
   else{
      playCards.hide();
       startGame.hide();
-    playCards.trigger(2000);
-    startGame.trigger(6000);
+    playCards.trigger(20000);
+    startGame.trigger(60000);
   }
 }
 weatherActive.cardAdded = function(card){
-  weather.update(card.stats.wind.value,card.stats.temp.value);
+  player.update(card.stats.wind.value,card.stats.temp.value);
 }
 weatherActive.cardRemoved = function(card){
  // weather.update(-card.stats.value.wind,-card.stats.value.temp);
@@ -924,7 +1019,7 @@ fetch('cards.json')
       //cardData.image.src = card.image;
 
       Object.keys(cardTypes[card.type].stats).forEach(stat => {
-        cardData.stats[stat] = new Prop(parseInt(card[stat],10),cardTypes[card.type].stats[stat]);//  new Image()
+        cardData.stats[stat] = new Stat(parseInt(card[stat],10),cardTypes[card.type].stats[stat]);//  new Image()
 
 
         //  value: parseInt(card[stat],10),
@@ -937,11 +1032,12 @@ fetch('cards.json')
     // the cards are now stored in the cards object
  //     console.log(cards);
     for(let card of cards){
-      let c = new Card(card.type, card.name, card.image,card.stats);
-      game.addEntity(c);
-      cardList.push(c)
-      c.addComponent(new TimerComponent(2000,initCard));
-
+      for(let i = 0; i < card.quantity; i++){
+        let c = new Card(card.type, card.name, card.image,card.stats);
+        game.addEntity(c);
+        cardList.push(c);
+        c.addComponent(new TimerComponent(2000,initCard));
+      }
     }
   });
 

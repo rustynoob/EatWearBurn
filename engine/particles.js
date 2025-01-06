@@ -68,7 +68,7 @@ export class ParticleTypeComponent extends Component {
     particle.velocity.x += particle.acceleration.x * dt;
     particle.velocity.y += particle.acceleration.y * dt;
   }
-  draw(ctx, transfom){
+  draw(ctx, transform){
     for (let particle of this.particles) {
       if (!particle.markedForDeletion){
          if(!this.render){
@@ -79,7 +79,13 @@ export class ParticleTypeComponent extends Component {
           ctx.fill();
         }
         else{
-           this.render.draw(ctx, particle.position.add(transfom));
+          ctx.save();
+          ctx.translate(transform.x, transform.y);
+          ctx.rotate(transform.rotation);
+          ctx.scale(transform.scale, transform.scale);
+
+           this.render.draw(ctx, new TransformComponent(particle.position.x,particle.position.y,0,particle.direction));
+          ctx.restore();
         }
       }
     }
@@ -121,13 +127,23 @@ function rayCasting(polygon, point) {
 
 //constructor(position, velocity, acceleration, direction, color, size, lifetime, type, radius)
 export class ParticleEmitterComponent extends Component {
-  constructor(emissionRate, particleTypeId, origin, polygon) {
+  constructor(emissionRate, particleTypeId, origin = { x: 0, y: 0 }, polygon, lifetime = 1000) {
     super("particleEmitter");
     this.emissionRate = emissionRate;
     this.particleType = particleTypeId;
-    this.origin = origin || { x: 0, y: 0 };
-    this.lifetime = 1000;
+    this.origin = origin ;
+    this.lifetime = lifetime;
     this.polygon = polygon;// || [{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
+    this.minX = polygon[0].x;
+    this.maxX = polygon[0].x;
+    this.minY = polygon[0].y;
+    this.maxY = polygon[0].y;
+    for(const point in polygon){
+      this.minX = Math.min(this.minX,point.x);
+      this.maxX = Math.max(this.maxX,point.x);
+      this.minY = Math.min(this.minX,point.x);
+      this.maxY = Math.max(this.maxX,point.x);
+    }
   }
 
   emit(dt) {
@@ -144,15 +160,15 @@ export class ParticleEmitterComponent extends Component {
           // Position the particle at the origin of the emitter
           new Vector(getRandomPointInPolygon(this.polygon)),
           // Give the particle a random velocity
-           new Vector({ x: (Math.random() * 2 - 1)*.2, y: (Math.random() * 2 - 1)*.2 }),
+           new Vector({ x: (Math.random() * 2 - 1)*.2, y: (Math.random())*.2 }),
           // Set the particle's acceleration to 0
-           new Vector({ x: 0, y: 0 }),
+           new Vector({ x: Math.random(), y: Math.random() }),
           // Set the particle's direction to 0
-          0,
+          Math.random()*6.28,
           // Set the particle's color to white
           { r: 120+Math.random()*50, g: 90+Math.random()*50, b:Math.random()*160, a:.3},
           // Set the particle's size to 1
-          .1,
+          1,
           // Set the particle's lifetime to 1 second
           this.lifetime,
           // Set the particle's type
@@ -222,7 +238,7 @@ export class Particle {
     this.position = position ||  new Vector({x:0,y:0});
     this.velocity = velocity ||  new Vector({x:0,y:0})
     this.acceleration = acceleration||  new Vector({x:0,y:0})
-    this.direction = direction||  new Vector({x:0,y:0})
+    this.direction = direction||  Math.random*6.28//new Vector({x:0,y:0})
     this.color = color || {r: 185, g:128, b:0, a:1};
     this.size = size || 2;
     this.lifetime = lifetime || 151200;
@@ -248,10 +264,10 @@ export class ParticleInteractorComponent extends Component {
     const transform = entity.getComponent("transform");
     const collision = entity.getComponent("collision");
 
-    const minX = transform.x;
-    const minY = transform.y;
-    const maxX = transform.x + collision.width;
-    const maxY = transform.y + collision.height;
+    const minX = transform.x-3;
+    const minY = transform.y-3;
+    const maxX = transform.x + 3//collision.width;
+    const maxY = transform.y + 3//collision.height;
 
     return particle.x >= minX && particle.x <= maxX && particle.y >= minY && particle.y <= maxY;
   };
@@ -308,8 +324,16 @@ export class ParticleSystem extends System{
       const interactor = entity.getComponent("interactor");
       const transform = entity.getComponent("transform");
       const collision = entity.getComponent("collision");
-      const min = [transform.x, transform.y];
-      const max = [transform.x + collision.width, transform.y + collision.height];
+
+
+
+
+
+
+      const min = [transform.x-3, transform.y-3];
+      const max = [transform.x + 3, transform.y + 3];
+      //const min = [transform.x, transform.y];
+      //const max = [transform.x + collision.width, transform.y + collision.height];
       this.tree.insert(interactor, min, max);
     }
 
