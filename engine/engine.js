@@ -178,6 +178,7 @@ export class Game {
     this.nextid = 0;
     this.index = 0;
     this.targetFrameTime = targetFrameTime;
+    document.title = name;
   }
 
   addEntity(entity) {

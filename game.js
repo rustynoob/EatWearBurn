@@ -25,7 +25,7 @@ from './engine/ui.js';
 
 
 
-export const game = new Game("test",document.getElementById("canvas"));
+export const game = new Game("Eat Wear Burn",document.getElementById("canvas"));
 
 const musicSystem = new MusicSystem();
 const ses = new SoundEffectSystem();
@@ -90,7 +90,7 @@ const snow = new Entity("particles");
 const snowFlake = new Particle({x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:1},false,1,10000,"snow",3)
 snow.addComponent(new Component("table"));
 snow.addComponent(new TransformComponent(0,0,0));
-snow.addComponent(new ParticleTypeComponent("snow", dustUpdate, new ScaledSpriteComponent("./graphics/small sprites/snow2.png",16,16,64,64,32,32,0),snowFlake));
+snow.addComponent(new ParticleTypeComponent("snow", dustUpdate, new ScaledSpriteComponent("./graphics/small sprites/snow.png",16,16,64,64,32,32,0),snowFlake));
 game.addEntity(snow);
 
 const snowMachine = new ParticleEmitterComponent(0.001, "snow", {x:0,y:0}, [{x:-100,y:-100},{x:1650,y:-100},{x:1650,y:750},{x:1550,y:750},{x:1550,y:0},{x:0,y:0},{x:0,y:750},{x:-100,y:750}],20000);
@@ -210,7 +210,8 @@ class Card extends Entity{
         this.stats.burn//,
        // this.name
       ]):new MultiRenderComponent(0,0,[
-        new PolygonComponent(this.shape,"rgb(100,100,255)","darkblue",1),
+        new PolygonComponent(this.shape,"rgb(10,80,125)","darkblue",1),
+        new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
         new PolygonComponent(this.shape,"transparent","darkblue",8),
         this.stats.wind,
         this.stats.temp//,
@@ -365,12 +366,13 @@ class CardCollection extends Entity{
     this.target = {stack:this,count:0,shuffel:false};
     this.face = "up";
     this.mouseOver = false;
-    this.render = [new PolygonComponent(this.shape,"transparent","rgb(0,30,60)"),
-      new WordWrappedTextComponent(this.name,"sans-serif",40,"rgb(0,30,60)","center",-100,-40,200)
+     const background= "rgb(3,40,70)";
+    this.render = [new PolygonComponent(this.shape,"transparent",background),
+      new WordWrappedTextComponent(this.name,"sans-serif",40,background,"center",-100,-40,200)
     ];
     for(let i = 0; i < this.max-1; i++){
       let lineX = 200+((width-200)/(max-1)*i);
-      this.render.push(new LineComponent("rgb(0,30,60)",2,0,0,lineX,0,lineX,300))
+      this.render.push(new LineComponent(background,2,0,0,lineX,0,lineX,300))
     }
     this.addComponent(new MultiRenderComponent(0,0,this.render));
     this.addComponent(new TransformComponent(x,y,-Math.random()));
@@ -566,7 +568,7 @@ class Player extends Entity{
 
     this.wind = new Stat(1,"./graphics/small sprites/wind.png");
     this.wind.position = 1;
-    this.cold = new Stat(1,"./graphics/small sprites/snow2.png");
+    this.cold = new Stat(1,"./graphics/small sprites/snow.png");
     this.cold.position = 2;
     this.eat = new Stat(1,"./graphics/small sprites/drumbstick.png");
     this.eat.position = 0;
@@ -578,7 +580,9 @@ class Player extends Entity{
     this.hunger =  new StatBar(-200,0,-5,5,0,"hunger",hungerIcon,[hungerTemp,hungerHealth]);
     this.health = new StatBar(-300,0,0,10,5,"health",healthIcon);
     this.addComponent(new MultiRenderComponent(0,0,[
-      new PolygonComponent(this.shape,"rgb(100,100,100)","navy"),
+
+      new PolygonComponent(this.shape,"rgb(10,60,80)","navy"),
+      //new PolygonComponent([{x:x,y:y},{x:x+200,y:y},{x:x+200,y:y+height},{x:x,y:y+height}],"rgb(10,30,40)","navy"),
       this.eat,
       this.burn,
       this.wind,
@@ -886,6 +890,7 @@ itemDraw.userAction = function(){weatherDraw.activate(); return true;}
 itemEat.cardAdded = function(card){player.updateEat(card.stats.eat.value)}
 itemWear.cardAdded = function(card){player.updateWear(card.stats.wear.value)}
 itemBurn.cardAdded = function(card){player.updateBurn(card.stats.burn.value)}
+itemDraw.cardAdded = function(card){card.played = false;};
 itemEat.cardRemoved = function(card){player.updateEat(-card.stats.eat.value)}
 itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
 itemBurn.cardRemoved = function(card){player.updateBurn(-card.stats.burn.value)}

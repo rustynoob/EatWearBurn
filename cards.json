@@ -18,7 +18,7 @@
         ],
      "stats": [
        {"name":"wind","image":"./graphics/small sprites/wind.png"},
-       {"name":"temp","image":"./graphics/small sprites/snow2.png"}
+       {"name":"temp","image":"./graphics/small sprites/snow.png"}
      ]
     }
   ],
@@ -61,17 +61,18 @@
       {"name":"belt","quantity":"1","type":"item","image":"./graphics/large sprites/belt.png","eat":"2","wear":"2","burn":"1"},
       {"name":"beehive","quantity":"1","type":"item","image":"./graphics/large sprites/beehive.png","eat":"4","wear":"1","burn":"3"},
       {"name":"bamboo","quantity":"1","type":"item","image":"./graphics/large sprites/bamboo.png","eat":"3","wear":"3","burn":"4"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"1","temp":"-1"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"1","temp":"-1"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"1","temp":"-2"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"1","temp":"-3"},
-      {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"1","temp":"-4"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"2","temp":"-1"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"2","temp":"-2"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"2","temp":"-3"},
-      {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"2","temp":"-4"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"3","temp":"-1"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"3","temp":"-2"},
-      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"3","temp":"-3"}  ,    {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/snow1.png","wind":"3","temp":"-4"}
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"1","temp":"-1"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"1","temp":"-1"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"1","temp":"-2"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"1","temp":"-3"},
+      {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/weather.png","wind":"1","temp":"-4"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"2","temp":"-1"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"2","temp":"-2"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"2","temp":"-3"},
+      {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/weather.png","wind":"2","temp":"-4"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"3","temp":"-1"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"3","temp":"-2"},
+      {"name":"weather","quantity":"2","type":"weather","image":"./graphics/large sprites/weather.png","wind":"3","temp":"-3"}  ,
+      {"name":"weather","quantity":"1","type":"weather","image":"./graphics/large sprites/weather.png","wind":"3","temp":"-4"}
   ]
 }
