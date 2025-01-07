@@ -105,6 +105,9 @@ export class UISystem extends System{
       return;
     }
 */
+     if(this.ongoingEvents.has("pointer")){
+       return;
+    }
     const touch = {
       x: event.pageX,
       y: event.pageY,

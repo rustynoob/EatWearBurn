@@ -355,7 +355,7 @@ export class LineComponent extends Component {
 }
 
 export class TextComponent extends Component {
-  constructor(content, font, size, color, align, x = 0, y = 0) {
+  constructor(content, font = "sans-serif", size = 12, color = "grey", align = "left", x = 0, y = 0) {
     super("render");
     this.content = content;
     this.font = font;

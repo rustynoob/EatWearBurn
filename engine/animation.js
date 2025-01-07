@@ -1,13 +1,14 @@
 import {Component, System, TransformComponent} from './engine.js';
 
 export class AnimationComponent extends Component {
-  constructor(startTransform, endTransform, duration, tweeningFn = AnimationComponent.lerp) {
+  constructor(startTransform, endTransform, duration, tweeningFn = AnimationComponent.lerp, next = false) {
     super("animation");
     this.startTransform = startTransform;
     this.endTransform = endTransform;
     this.duration = duration;
     this.tweeningFn = tweeningFn;
     this.elapsedTime = 0;
+    this.next = next;
   }
   static lerp(start, end, t) {
     return new TransformComponent(
@@ -31,7 +32,7 @@ export class AnimationSystem extends System{
     {
       for (const entity of entities){
         if(entity.hasComponent("animation")){
-          const animation = entity.getComponent("animation");
+          let animation = entity.getComponent("animation");
           animation.elapsedTime += dt;
 
           if (animation.elapsedTime >= animation.duration) {
@@ -49,7 +50,15 @@ export class AnimationSystem extends System{
           transformComponent.scale = tweenedTransform.scale;
 
           if (animation.elapsedTime >= animation.duration) {
-          entity.removeComponent(animation.name);
+            if(animation.next){
+              if(!animation.next()){
+                 entity.removeComponent(animation.name);
+              }
+
+            }
+            else{
+              entity.removeComponent(animation.name);
+            }
           }
         }
       }
