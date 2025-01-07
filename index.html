@@ -17,7 +17,12 @@
   </style>
 </head>
 <body>
-  <canvas id="canvas" style="touch-action:none;"></canvas>
+  <canvas id="canvas" style="
+  touch-action:none;
+  user-select: none; /* Standard syntax */
+  -webkit-user-select: none; /* For older versions of Safari */
+  -moz-user-select: none; /* For older versions of Firefox */
+  -ms-user-select: none; /* For Internet Explorer/Edge */"></canvas>
   <script src="./game.js" type='module'></script>
   <script>
     const canvas = document.getElementById('canvas');

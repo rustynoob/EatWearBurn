@@ -244,8 +244,42 @@ class Card extends Entity{
     this.ui = new UIComponent()
     this.addComponent(this.ui);
 
-    this.ui.regesterCallback("pointer",this.uiCallback);
+    this.ui.regesterCallback("pointer",this.uiCallback.bind(this));
+    this.zoomed = false;
+    this.zooming = false;
   }
+  zoom(){
+    this.zooming = false;
+    if(this.zoomed){
+      this.unzoom()
+      return;
+    }
+    this.zoomed = true;
+    const zoomFactor = 2;
+    const x = 575;
+    const y = 20;
+    this.addComponent(new AnimationComponent(new TransformComponent(this.homeTransform.x,this.homeTransform.y,this.homeTransform.z,this.homeTransform.rotation,this.homeTransform.scale),new TransformComponent(x,y,3000,0,zoomFactor),500));
+  }
+  unzoom(){
+    this.zoomed = false;
+    const animation = this.getComponent("animation");
+    if(animation){
+      const end = animation.startTransform;
+      animation.startTransform = animation.endTransform;
+      animation.endTransform = end;
+      animation.elapsedTime = animation.duration - animation.elapsedTime;
+    }
+    else{
+      const transform = this.getComponent("transform");
+      const f = new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
+      const t = new  TransformComponent(this.homeTransform.x,this.homeTransform.y,this.homeTransform.z,this.homeTransform.rotation,this.homeTransform.scale)
+      this.addComponent(new AnimationComponent(f,t,500));
+    }
+  }
+
+
+
+
   flip(side = false){
     this.removeComponent("render");
     if(!side){
@@ -272,6 +306,9 @@ class Card extends Entity{
       switch(event.action){
         case "down":
           // double click
+          if(!caller.selected){
+            this.zooming = true;
+          }
           if(timeRemaining > 0){
             if(caller.hasComponent("timer")){
               caller.removeComponent("timer");
@@ -281,7 +318,8 @@ class Card extends Entity{
             }
           }
           // single click
-          else{
+          else
+            if(!caller.zoomed){
             caller.selected = true;
             caller.homeTransform =  new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
             caller.pointer.x = event.x
@@ -293,26 +331,36 @@ class Card extends Entity{
           if(caller.hasComponent("animation")){
             caller.removeComponent("animation");
           }
+
           break;
         case "up":
+          if(this.zoomed|| this.zooming){
+            this.zoom();
+            this.selected = false;
+          }
           if(caller.selected){
             // if this has potential to be a double click call the function on a timer
             //otherwise we will call the function imediatly
-
             if(timeRemaining > 0){
-            caller.addComponent(new TimerComponent(timeRemaining, resetClick));
+              caller.addComponent(new TimerComponent(timeRemaining, resetClick));
             }
             else{
               resetClick(caller);
             }
           }
+
+
           break;
         case "move":
-          if(caller.selected){
-            transform.x += event.x - caller.pointer.x;
-            transform.y += event.y - caller.pointer.y;
-            caller.pointer.x = event.x;
-            caller.pointer.y = event.y;
+          this.zooming = false;
+          if(!this.zoomed){
+            if(caller.selected){
+              transform.x += event.x - caller.pointer.x;
+              transform.y += event.y - caller.pointer.y;
+              caller.pointer.x = event.x;
+              caller.pointer.y = event.y;
+            }
+
           }
           break;
         default:
@@ -323,9 +371,6 @@ class Card extends Entity{
 function resetClick(entity){
 //  entity.addComponent(new SoundEffectComponent("drop","play"))
   entity.selected = false;
-  let transform = entity.getComponent("transform");
- // const t = new TransformComponent(transform.x, transform.y, transform.z, transform.rotation, transform.scale );
-//  entity.addComponent(new AnimationComponent(t,entity.homeTransform,500));
   entity.addComponent(new Component("held"));
 
 }
@@ -549,11 +594,11 @@ class Stat{
 class Player extends Entity{
   constructor(){
     super("player");
-    const x = -10;
-    const y = -10;
-    const width = 625;
-    const height = 320;
-    this.shape =  [{x:x,y:y},{x:x+width,y:y},{x:x+width,y:y+height},{x:x,y:y+height}];
+    this.x = -10;
+    this.y = -10;
+    this.width = 625;
+    this.height = 320;
+    this.shape =  [{x:this.x,y:this.y},{x:this.x+this.width,y:this.y},{x:this.x+this.width,y:this.y+this.height},{x:this.x,y:this.y+this.height}];
 
     const tempIcon = new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",8,0,64,64,64,32);
     const hungerIcon = new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",0,0,64,64,32,32);
@@ -592,10 +637,67 @@ class Player extends Entity{
       this.hunger,
       this.health
     ]));
+    this.home = new TransformComponent(925,50,2000)
     this.addComponent(new TransformComponent(925,50,2000));
     this.addComponent(new Component("table"));
 
+    this.ui = new UIComponent();
+    this.addComponent(this.ui);
+    this.ui.regesterCallback("pointer",this.uiCallback.bind(this));
+    this.addComponent(new CollisionComponent(this.shape));
+    this.zoomed = false;
+    this.zooming = false;
   }
+ uiCallback(caller, event){
+    //let transform = caller.getComponent("transform");
+    switch(event.action){
+      case "down":
+
+          this.zooming = true;
+
+        break;
+      case "up":
+        if(this.zooming){
+          this.zoom()
+          this.zooming = false;
+        }
+
+        break;
+      case "move":
+        this.zooming = false;
+        break;
+      default:
+
+    }
+  }
+  zoom(){
+    if(this.zoomed){
+      this.unzoom()
+      return;
+    }
+    this.zoomed = true;
+    const zoomFactor = 2.2;
+    const x = 120;
+    const y = 45;
+    this.addComponent(new AnimationComponent(new TransformComponent(this.home.x,this.home.y,this.home.z,this.home.rotation,this.home.scale),new TransformComponent(x,y,3000,0,zoomFactor),500));
+  }
+  unzoom(){
+    this.zoomed = false;
+    const animation = this.getComponent("animation");
+    if(animation){
+      const end = animation.startTransform;
+      animation.startTransform = animation.endTransform;
+      animation.endTransform = end;
+      animation.elapsedTime = animation.duration - animation.elapsedTime;
+    }
+    else{
+      const transform = this.getComponent("transform");
+      const f = new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
+      const t = new  TransformComponent(this.home.x,this.home.y,this.home.z,this.home.rotation,this.home.scale)
+      this.addComponent(new AnimationComponent(f,t,500));
+    }
+  }
+
   reset(){
     this.eat.set(0);
     this.wear.set(0);
