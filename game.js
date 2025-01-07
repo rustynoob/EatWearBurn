@@ -4,7 +4,6 @@ import {ParticleEmitterComponent, ParticleSystem, ParticleInteractorComponent , 
 from './engine/particles.js';
 import { CollisionSystem, CollisionComponent }
 from './engine/collision.js';
-//import {PhysicsComponent, PhysicsSystem} from './engine/physics.js';
 import {SoundEffectComponent, SoundEffectSystem }
 from './engine/soundEffects.js';
 import {SpriteComponent,RotatedSpriteComponent, ScaledSpriteComponent, TiledSpriteComponent,AnimatedSpriteComponent, SquareComponent,CircleComponent, RenderSystem, TextComponent, WordWrappedTextComponent, LineComponent, PolygonComponent, CameraComponent, CompositeSpriteComponent, MultiRenderComponent, EntityRenderComponent}
@@ -14,13 +13,12 @@ from './engine/music.js';
 import {generatePolygon,Vector,pointInPolygon}
 from './engine/vector.js';
 import {TimerSystem, TimerComponent} from "./engine/timer.js";
-//import {SaveLoad, SaveComponent} from './engine/saveLoad.js';
-//import {AOEComponent, AOESystem} from "./engine/aoe.js";
+
 import {AnimationComponent, AnimationSystem}
 from './engine/animation.js';
 import {UISystem, UIComponent}
 from './engine/ui.js';
-//deccorators
+
 
 
 
@@ -59,20 +57,7 @@ debug.addComponent(new UIComponent([
 ]));
 
 game.addEntity(jukeBox);
-/*
-constructor(position, velocity, acceleration, direction, color, size, lifetime, type, radius) {
-    this.position = position ||  new Vector({x:0,y:0});
-    this.velocity = velocity ||  new Vector({x:0,y:0})
-    this.acceleration = acceleration||  new Vector({x:0,y:0})
-    this.direction = direction||  new Vector({x:0,y:0})
-    this.color = color || {r: 185, g:128, b:0, a:1};
-    this.size = size || 2;
-    this.lifetime = lifetime || 151200;
-    this.type = type;
-    this.radius = radius || 40;
-    this.markedForDeletion = false;
-  }
-*/
+
 function dustUpdate(particle, dt) {
   // Update the particle's position based on its velocity and acceleration
   const scaler = 0.1
@@ -84,7 +69,6 @@ function dustUpdate(particle, dt) {
   if ((particle.velocity.x < 0 && particle.position.x < 0)||particle.velocity.x > 0 && particle.position.y > 1550){
     particle.markFdForDeletion = true;
   }
- // particle.direction += Math.random();
 }
 const snow = new Entity("particles");
 const snowFlake = new Particle({x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:1},false,1,10000,"snow",3)
@@ -96,33 +80,7 @@ game.addEntity(snow);
 const snowMachine = new ParticleEmitterComponent(0.001, "snow", {x:0,y:0}, [{x:-100,y:-100},{x:1650,y:-100},{x:1650,y:750},{x:1550,y:750},{x:1550,y:0},{x:0,y:0},{x:0,y:750},{x:-100,y:750}],20000);
 snow.addComponent(snowMachine);
 
-class Cursor extends Entity{
-  constructor(){
-    super("cursor");
-    this.addComponent(new TransformComponent());
-    this.addComponent(new CollisionComponent(generatePolygon(3,3)));
-    this.ui = new UIComponent();
-    this.ui.regesterCallback("pointer",this.updatePosition.bind(this));
-    this.addComponent(this.ui);
-    this.addComponent(new ParticleInteractorComponent(this.onCollisionFn));
 
-
-  }
-  onColision(entity,particle){
-    const transform = this.getComponent("transform");
-    particle.velocity.x = 0;
-    particle.velocity.y = 0;
-    particle.position.x = transform.x;
-    particle.position.y = transform.y;
-  }
-
-  updatePosition(caller,event){
-    const transform = this.getComponent("transform");
-    transform.x = event.x;
-    transform.y = event.y;
-  }
-}
-//game.addEntity(new Cursor)
 // game code
 class Stat extends Component{
   constructor(value,url){
@@ -207,24 +165,20 @@ class Card extends Entity{
         new PolygonComponent(this.shape,"transparent","brown",8),
         this.stats.eat,
         this.stats.wear,
-        this.stats.burn//,
-       // this.name
+        this.stats.burn
       ]):new MultiRenderComponent(0,0,[
         new PolygonComponent(this.shape,"rgb(10,80,125)","darkblue",1),
         new ScaledSpriteComponent(image,-5,-50,256,256,180,180, 0),
         new PolygonComponent(this.shape,"transparent","darkblue",8),
         this.stats.wind,
-        this.stats.temp//,
-//        this.name
+        this.stats.temp
       ]));
     this.back =
       (type == "item")?(new MultiRenderComponent(0,0,[
-     //   new ScaledSpriteComponent("./graphics/large sprites/itemback.png",0,0,200,300,200,300, 0),
        new PolygonComponent(this.shape,"rgb(150,150,50)","brown",1),
         new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(255,255,200)","right",-190,-30,200)
       ]))
       :(new MultiRenderComponent(0,0,[
-   //     new ScaledSpriteComponent("./graphics/large sprites/weatherback.png",0,0,200,300,200,300, 0),
         new PolygonComponent(this.shape,"rgb(50,50,155)","darkblue",1),
         new WordWrappedTextComponent(this.type,"sans-serif",32,"rgb(200,200,255)","right",-190,-30,200)
       ])
@@ -324,7 +278,6 @@ class Card extends Entity{
             caller.homeTransform =  new TransformComponent(transform.x,transform.y,transform.z,transform.rotation,transform.scale);
             caller.pointer.x = event.x
             caller.pointer.y = event.y;
-           // caller.addComponent(new SoundEffectComponent("pickup","play"));
             caller.pointer.time = time;
             transform.z += Math.random();
           }
@@ -369,7 +322,6 @@ class Card extends Entity{
     }
 }
 function resetClick(entity){
-//  entity.addComponent(new SoundEffectComponent("drop","play"))
   entity.selected = false;
   entity.addComponent(new Component("held"));
 
@@ -424,25 +376,20 @@ class CardCollection extends Entity{
     this.addComponent(new Component("table"));
     this.addComponent(new Component("hand"));
     this.addComponent(new CollisionComponent(this.shape));
-    let ui = new UIComponent()
-    this.addComponent(ui);
+ //   let ui = new UIComponent()
+  //  this.addComponent(ui);
     let collision = new CollisionComponent(this.shape);
     this.addComponent(collision);
     collision.registerCallback("held",cardInHand)
-    ui.regesterCallback("pointer",this.uiCallback);
+  //  ui.regesterCallback("pointer",this.uiCallback);
   }
   uiCallback(caller, event){
-    //let transform = caller.getComponent("transform");
     switch(event.action){
       case "down":
-        //caller.selected = true;
 
-        // which card id being picked up
         break;
       case "up":
-        // if a card has been picked up we need to check if it is being dropped here or not
-        //caller.selected = false
-        //caller.arrangeCards();
+
         break;
       case "move":
         break;
@@ -576,21 +523,7 @@ class Tutorial extends Entity {
   }
 }
 
-/*
-class Stat{
-  constructor(legend,x,y,color){
-    this.value = new TextComponent(0,"sans",40, color,"left",0,-42);
-    this.legend = new TextComponent(legend,"sans",40, color,"right",0,-42);
-    this.render = new MultiRenderComponent(x,y,[this.value,this.legend]);
-  }
-  get(){
-    return this.value.content;
-  }
-  set(value){
-    this.value.content = value;
-  }
-}
-*/
+
 class Player extends Entity{
   constructor(){
     super("player");
@@ -627,7 +560,6 @@ class Player extends Entity{
     this.addComponent(new MultiRenderComponent(0,0,[
 
       new PolygonComponent(this.shape,"rgb(10,60,80)","navy"),
-      //new PolygonComponent([{x:x,y:y},{x:x+200,y:y},{x:x+200,y:y+height},{x:x,y:y+height}],"rgb(10,30,40)","navy"),
       this.eat,
       this.burn,
       this.wind,
@@ -1120,24 +1052,19 @@ fetch('cards.json')
         name: card.name,
         quantity: card.quantity,
         type: card.type,
-        image:card.image,//new Image(),
+        image:card.image,
         stats: {}
       };
-      //cardData.image.src = card.image;
 
       Object.keys(cardTypes[card.type].stats).forEach(stat => {
         cardData.stats[stat] = new Stat(parseInt(card[stat],10),cardTypes[card.type].stats[stat]);//  new Image()
 
 
-        //  value: parseInt(card[stat],10),
-        //  image: cardTypes[card.type].stats[stat];//  new Image()
-        //};
-        //cardData.stats[stat].image.src = cardTypes[card.type].stats[stat];
+
       });
       return cardData;
     });
     // the cards are now stored in the cards object
- //     console.log(cards);
     for(let card of cards){
       for(let i = 0; i < card.quantity; i++){
         let c = new Card(card.type, card.name, card.image,card.stats);
