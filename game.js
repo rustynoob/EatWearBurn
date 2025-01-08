@@ -524,6 +524,7 @@ class Tutorial extends Entity {
   }
 }
 
+<<<<<<< HEAD
 class Popup extends Entity {
   constructor(x,y,image){
     super("tutorial");
@@ -556,6 +557,8 @@ class Popup extends Entity {
   }
 }
 
+=======
+>>>>>>> 9c2cf96a473cca0f63e91b82cbe717c9e0f21edc
 
 class Player extends Entity{
   constructor(){
