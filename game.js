@@ -364,7 +364,7 @@ class CardCollection extends Entity{
     this.target = {stack:this,count:0,shuffel:false};
     this.face = "up";
     this.mouseOver = false;
-     const background= "rgb(3,40,70)";
+     const background= "rgb(6,80,140)";
     this.render = [new PolygonComponent(this.shape,"transparent",background),
       new WordWrappedTextComponent(this.name,"sans-serif",40,background,"center",-100,-40,200)
     ];
@@ -524,7 +524,6 @@ class Tutorial extends Entity {
   }
 }
 
-<<<<<<< HEAD
 class Popup extends Entity {
   constructor(x,y,image){
     super("tutorial");
@@ -557,8 +556,7 @@ class Popup extends Entity {
   }
 }
 
-=======
->>>>>>> 9c2cf96a473cca0f63e91b82cbe717c9e0f21edc
+
 
 class Player extends Entity{
   constructor(){
@@ -902,12 +900,52 @@ let startGame = new Tutorial(1100,500,new ScaledSpriteComponent("./graphics/larg
 
 let playCards = new Tutorial(360,300,new MultiRenderComponent(0,0,[new ScaledSpriteComponent("./graphics/large sprites/rightup.png",-80,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/up.png",-15,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/leftup.png",75,0,256,256,256,256),new ScaledSpriteComponent("./graphics/large sprites/coat.png",10,83,256,256,200,200),new ScaledSpriteComponent("./graphics/large sprites/drumbstick.png",140,80,256,256,150,150),new ScaledSpriteComponent("./graphics/large sprites/fire.png",-140,90,256,256,170,170)]));
 startGame.trigger(10000);
-let die = new Popup(1300,200,new MultiRenderComponent(0,0,[new WordWrappedTextComponent("You were unable to survive the harsh winter.","sans-serif",64,"red","center",0,0,300)]));
+let die = new Popup(1340,98,new MultiRenderComponent(0,0,[new PolygonComponent([{x:-180,y:-70},{x:180,y:-70},{x:180,y:626},{x:-180,y:626}],"grey","rgb(130,160,256)",10),new WordWrappedTextComponent("You were unable to survive the harsh winter. Draw a weather card to start a new game","sans-serif",58,"rgb(150,0,0)","center",0,-20,300)]));
 
+let intro = new Popup(20,20,new MultiRenderComponent(0,0,[
+  new PolygonComponent([{x:-20,y:-20},{x:1550,y:-20},{x:1550,y:800},{x:-20,y:800}],"rgba(200,200,200,0.5)","transparent",10),
+  new WordWrappedTextComponent("Winter has arrived. You must survive using the items you scavange. Each item may be eaten, worn or burned to help you survive the bitter cold.","sans-serif",24,"rgb(100,0,0)","left",-100,-350,1400),
+  new WordWrappedTextComponent("Winter lasts 3 months. Each months is 4 weeks. At the start of each month draw 12 cards from the item pile into your hand and flip one weather card from the weater draw pile onto the active weather pile.","sans-serif",24,"rgb(100,0,0)","left",-30,-450,400),
+    new WordWrappedTextComponent("Each week play cards from your hand to the Eat, Wear, and Burn piles. Each pile may contain up to three cards. you may play as many cards as you want in a turn but be careful because you won't get any new cards untill the end of the month.","sans-serif",24,"rgb(100,0,0)","left",-430,-450,350),
+    new WordWrappedTextComponent("Once you are satisfied with your choises each pile is resolved in the order Eat, Wear, Burn and then the health tracker is adjusted based on the hunger and temprature trackers. If at any time your health reaches the bottom slot of the health bar you die.","sans-serif",24,"rgb(100,0,0)","left",-800,-450,350),
+    new WordWrappedTextComponent("1: The Eat Pile - subtract the number of drumbsticks from your temprature tracker from the total number of drumbsticks on the cards in your eat pile  and add move your hunger tracker up that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-30,-90,270),
+    new WordWrappedTextComponent("2: The Wear Pile - Wearing things blocks the wind so subtract the number of coats from the cards on your wear pile from the total wind from the active weather cards.","sans-serif",24,"rgb(100,0,0)","left",-320,-90,270),
+    new WordWrappedTextComponent("3: The Burn Pile - Multiply the remaining wind by the cold from the active weather cards. Now subtract the cold from the total heat on your burn cards and move the temprature tracker that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-620,-90,270),
+  new WordWrappedTextComponent("4: The Health Tracker - Take the health values from the hunger and temprature trackers and move your health tracker theat many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-910,-90,270),
+  new WordWrappedTextComponent("At the end of each turn discard all the cards from the eat and burn piles. Draw a new weather card to begin the next week. Every 4 weeks starts a new month so discard all the active weather cards. Then draw one weather card and replinish your hand to twelve cards to start a new month.","sans-serif",24,"rgb(100,0,0)","left",-1170,-450,350),
+  new WordWrappedTextComponent("Winning The Game: You win the game when you finsh your third month alive","sans-serif",24,"rgb(100,0,0)","left",-1200,-90,270)
+]));
+
+let live = new Popup(270,270,new MultiRenderComponent(0,0,[new PolygonComponent([{x:-20,y:-20},{x:1010,y:-20},{x:1010,y:220},{x:-20,y:220}],"grey","green",10),new WordWrappedTextComponent("You have survived and made it to spring but winter will be back before you know it. Draw a weather card to start a new game","sans-serif",64,"blue","left",0,-50,1000)]));
 game.addEntity(startGame);
 game.addEntity(playCards);
 game.addEntity(die);
+game.addEntity(live);
+game.addEntity(intro);
+//intro.show();
+class Help extends Entity{
+  constructor(){
+    super("help");
+    this.shape = generatePolygon(10,20);
+    this.addComponent(new TransformComponent(1520,30,5000));
+    this.addComponent(new CollisionComponent(this.shape));
+    this.ui = new UIComponent();
+    this.addComponent(this.ui);
+    this.addComponent(new MultiRenderComponent(0,0,[new PolygonComponent(this.shape,"grey"),new WordWrappedTextComponent("?","sans-serif",32,"rgb(10,10,100)","left",8,-11,1000)]));
+    this.addComponent(new Component("table"));
+    this.ui.regesterCallback("pointer",helpCallback);
+//
 
+  }
+}
+function helpCallback(caller, event){
+  if(event.action == "down"){
+    intro.show();
+  }
+}
+game.addEntity(new Help());
+
+//player.zoom();
 const top = 50;
 const bot = 400;
 const row1 = 40;
@@ -1062,6 +1100,9 @@ weatherDiscard.userAction = function(){
   itemWear.manAct();
   itemHand.manAct();
   itemDiscard.manAct();
+  if(!player.health.get("dead")){
+    live.show();
+  }
 
 }
 function gameOver(){
