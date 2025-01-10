@@ -264,10 +264,10 @@ export class ParticleInteractorComponent extends Component {
     const transform = entity.getComponent("transform");
     const collision = entity.getComponent("collision");
 
-    const minX = transform.x-3;
-    const minY = transform.y-3;
-    const maxX = transform.x + 3//collision.width;
-    const maxY = transform.y + 3//collision.height;
+    const minX = transform.x;
+    const minY = transform.y;
+    const maxX = transform.x + collision.width;
+    const maxY = transform.y + collision.height;
 
     return particle.x >= minX && particle.x <= maxX && particle.y >= minY && particle.y <= maxY;
   };

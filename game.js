@@ -45,6 +45,7 @@ const jukeBox = new Entity("audio");
 //jukeBox.addComponent(music);
 jukeBox.addComponent(new CameraComponent("table",0,0,10,1550,750,.25));
 jukeBox.addComponent(new TransformComponent())
+/*
 game.addEntity(debug);
 
 debug.addComponent(new UIComponent([
@@ -55,7 +56,10 @@ debug.addComponent(new UIComponent([
   {event:"particles",callback:function(caller,input){if(input.action=="up"){caller.particles = !caller.particles;}}},
   {event:"collisions",callback:function(caller,input){if(input.action=="up"){caller.collisions = !caller.collisions;}}}
 ]));
+*/
 
+const snow = new Entity("particles");
+snow.windspeed = 0;
 game.addEntity(jukeBox);
 
 function dustUpdate(particle, dt) {
@@ -66,18 +70,20 @@ function dustUpdate(particle, dt) {
   particle.velocity.x += (Math.random()-0.5)*scaler;
   particle.velocity.y += (Math.random()-0.5)*scaler;
   particle.direction += particle.acceleration.x*scaler;
+  particle.velocity.x += (snow.windspeed-particle.velocity.x)*0.001;
   if ((particle.velocity.x < 0 && particle.position.x < 0)||particle.velocity.x > 0 && particle.position.y > 1550){
     particle.markFdForDeletion = true;
   }
 }
-const snow = new Entity("particles");
+
 const snowFlake = new Particle({x:0,y:0},{x:0,y:1},{x:0,y:0},{x:0,y:1},false,1,10000,"snow",3)
+
 snow.addComponent(new Component("table"));
 snow.addComponent(new TransformComponent(0,0,0));
 snow.addComponent(new ParticleTypeComponent("snow", dustUpdate, new ScaledSpriteComponent("./graphics/small sprites/snow.png",16,16,64,64,32,32,0),snowFlake));
 game.addEntity(snow);
 
-const snowMachine = new ParticleEmitterComponent(0.001, "snow", {x:0,y:0}, [{x:-100,y:-100},{x:1650,y:-100},{x:1650,y:750},{x:1550,y:750},{x:1550,y:0},{x:0,y:0},{x:0,y:750},{x:-100,y:750}],20000);
+const snowMachine = new ParticleEmitterComponent(0.003, "snow", {x:0,y:0}, [{x:-100,y:-100},{x:1650,y:-100},{x:1650,y:750},{x:1550,y:750},{x:1550,y:0},{x:0,y:0},{x:0,y:750},{x:-100,y:750}],20000);
 snow.addComponent(snowMachine);
 
 
@@ -404,7 +410,9 @@ class CardCollection extends Entity{
       return false;
     }
     if (card.stack && card.stack != this){
-      card.stack.removeCard(card);
+      if(!card.stack.removeCard(card)){
+        return false;
+      }
 
     }
     card.stack = this;
@@ -476,6 +484,9 @@ class CardCollection extends Entity{
 
     }
     return true;
+  }
+  activated(){
+    return true
   }
   shuffel(){
     let shuffeledCards = [];
@@ -573,7 +584,7 @@ class Player extends Entity{
      const tempIconSmall = new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",4,0,64,64,32,16);
     const hungerIconSmall = new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",0,0,64,64,16,16);
     const healthIconSmall = new ScaledSpriteComponent("./graphics/small sprites/heart.png",0,0,64,64,16,16);
-    const deathIconSmall = new ScaledSpriteComponent("./graphics/small sprites/fork.png",0,0,64,64,32,32);
+    const deathIconSmall = new ScaledSpriteComponent("./graphics/small sprites/tombstone.png",4,-2,64,64,32,32);
     const hungerHealth = new Mapping("health",[new Division(5,5,2),new Division(2,4,1),new Division(-1,1,0),new Division(-4,-2,-1),new Division(-5,-5,-2)],healthIconSmall);
     const hungerTemp = new Mapping("temp",[new Division(5,5,2),new Division(3,4,1),new Division(-4,3,0),new Division(-5,-5,-1)],tempIconSmall);
     const tempHealth = new Mapping("health",[new Division(6,6,-2),new Division(2,5,-1),new Division(-1,1,0),new Division(-4,-2,-1),new Division(-5,-5,-2),new Division(-6,-6,-3)],healthIconSmall);
@@ -688,8 +699,8 @@ class Player extends Entity{
   update(wind, temp){
     this.wind.set(this.wind.get()+wind);
     this.cold.set(this.cold.get()+temp);
-    snowMachine.emissionRate = Math.abs(this.temp.get())*0.002;
-    snowFlake.velocity.x = this.wind.get()*2;
+    snowMachine.emissionRate = Math.abs(this.temp.get())*0.002+0.005;
+    snow.windspeed = -this.wind.get();
   }
 }
 
@@ -903,20 +914,29 @@ startGame.trigger(10000);
 let die = new Popup(1340,98,new MultiRenderComponent(0,0,[new PolygonComponent([{x:-180,y:-70},{x:180,y:-70},{x:180,y:626},{x:-180,y:626}],"grey","rgb(130,160,256)",10),new WordWrappedTextComponent("You were unable to survive the harsh winter. Draw a weather card to start a new game","sans-serif",58,"rgb(150,0,0)","center",0,-20,300)]));
 
 let intro = new Popup(20,20,new MultiRenderComponent(0,0,[
-  new PolygonComponent([{x:-20,y:-20},{x:1550,y:-20},{x:1550,y:800},{x:-20,y:800}],"rgba(200,200,200,0.5)","transparent",10),
-  new WordWrappedTextComponent("Winter has arrived. You must survive using the items you scavange. Each item may be eaten, worn or burned to help you survive the bitter cold.","sans-serif",24,"rgb(100,0,0)","left",-100,-350,1400),
-  new WordWrappedTextComponent("Winter lasts 3 months. Each months is 4 weeks. At the start of each month draw 12 cards from the item pile into your hand and flip one weather card from the weater draw pile onto the active weather pile.","sans-serif",24,"rgb(100,0,0)","left",-30,-450,400),
-    new WordWrappedTextComponent("Each week play cards from your hand to the Eat, Wear, and Burn piles. Each pile may contain up to three cards. you may play as many cards as you want in a turn but be careful because you won't get any new cards untill the end of the month.","sans-serif",24,"rgb(100,0,0)","left",-430,-450,350),
-    new WordWrappedTextComponent("Once you are satisfied with your choises each pile is resolved in the order Eat, Wear, Burn and then the health tracker is adjusted based on the hunger and temprature trackers. If at any time your health reaches the bottom slot of the health bar you die.","sans-serif",24,"rgb(100,0,0)","left",-800,-450,350),
-    new WordWrappedTextComponent("1: The Eat Pile - subtract the number of drumbsticks from your temprature tracker from the total number of drumbsticks on the cards in your eat pile  and add move your hunger tracker up that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-30,-90,270),
-    new WordWrappedTextComponent("2: The Wear Pile - Wearing things blocks the wind so subtract the number of coats from the cards on your wear pile from the total wind from the active weather cards.","sans-serif",24,"rgb(100,0,0)","left",-320,-90,270),
-    new WordWrappedTextComponent("3: The Burn Pile - Multiply the remaining wind by the cold from the active weather cards. Now subtract the cold from the total heat on your burn cards and move the temprature tracker that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-620,-90,270),
-  new WordWrappedTextComponent("4: The Health Tracker - Take the health values from the hunger and temprature trackers and move your health tracker theat many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-910,-90,270),
-  new WordWrappedTextComponent("At the end of each turn discard all the cards from the eat and burn piles. Draw a new weather card to begin the next week. Every 4 weeks starts a new month so discard all the active weather cards. Then draw one weather card and replinish your hand to twelve cards to start a new month.","sans-serif",24,"rgb(100,0,0)","left",-1170,-450,350),
-  new WordWrappedTextComponent("Winning The Game: You win the game when you finsh your third month alive","sans-serif",24,"rgb(100,0,0)","left",-1200,-90,270)
+  new PolygonComponent([{x:-20,y:-20},{x:1550,y:-20},{x:1550,y:800},{x:-20,y:800}],"rgba(200,200,200,0.7)","transparent",10),
+  new WordWrappedTextComponent("Winter has arrived. You must survive using the items you scavenge. Each item may be eaten, worn or burned to help you survive the bitter cold.","sans-serif",32,"rgb(100,0,0)","center",-757,-350,1400),
+  new WordWrappedTextComponent("Winter lasts 3 months. Each months is 4 weeks. At the start of each month draw 12 cards from the item pile into your hand and flip one weather card from the weather draw pile onto the active weather pile.","sans-serif",24,"rgb(100,0,0)","left",-30,-450,400),
+    new WordWrappedTextComponent("Each week play cards from your hand to the Eat, Wear, and Burn piles. Each pile may contain up to three cards. you may play as many cards as you want in a turn but be careful because you won't get any new cards until the end of the month.","sans-serif",24,"rgb(100,0,0)","left",-430,-450,350),
+    new WordWrappedTextComponent("Once you are satisfied with your choices each pile is resolved in the order Eat, Wear, Burn and then the health tracker is adjusted based on the hunger and temperature trackers. If at any time your health reaches the bottom slot of the health bar you die.","sans-serif",24,"rgb(100,0,0)","left",-800,-450,350),
+    new ScaledSpriteComponent("./graphics/small sprites/tombstone.png",-445,-310,64,64,32,32),
+    new WordWrappedTextComponent("1: The Eat Pile - subtract the number of drumsticks --` from your temperature tracker from the total number of drumsticks on the cards in your eat pile  and move your hunger tracker up that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-30,-90,270),
+    new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",-74,-57,64,64,32,32),
+    new WordWrappedTextComponent("2: The Wear Pile - Wearing things blocks the wind so subtract the number of coats - - from the cards on your wear pile from the total wind -- from the active weather cards.","sans-serif",24,"rgb(100,0,0)","left",-320,-90,270),
+    new ScaledSpriteComponent("./graphics/small sprites/coat.png",-247,-72,64,64,32,32),
+    new ScaledSpriteComponent("./graphics/small sprites/wind.png",-282,-93,64,64,32,32),
+    new WordWrappedTextComponent("3: The Burn Pile - Multiply the remaining wind by the cold     from the active weather cards. Now subtract the cold from the total heat - on your burn cards and move the temperature tracker that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-620,-90,270),
+    new ScaledSpriteComponent("./graphics/small sprites/fire.png",-431,-92,64,64,32,32),
+    new ScaledSpriteComponent("./graphics/small sprites/snow.png",-396,-57,64,64,32,32),
+    new WordWrappedTextComponent("4: The Health Tracker - Take the health - - values from the hunger - and temperature   trackers and move your health tracker that many spaces. ","sans-serif",24,"rgb(100,0,0)","left",-910,-90,270),
+    new ScaledSpriteComponent("./graphics/small sprites/drumbstick.png",-578,-58,64,64,32,32),
+    new ScaledSpriteComponent("./graphics/small sprites/thermomitor.png",-540,-70,64,64,32,32),
+    new ScaledSpriteComponent("./graphics/small sprites/heart.png",-538,-45,64,64,32,32),
+  new WordWrappedTextComponent("At the end of each turn discard all the cards from the eat and burn piles. Draw a new weather card to begin the next week. Every 4 weeks starts a new month so discard all the active weather cards. Then draw one weather card and replenish  your hand to twelve cards to start a new month.","sans-serif",24,"rgb(100,0,0)","left",-1170,-450,350),
+  new WordWrappedTextComponent("Winning The Game: You win the game when you finish your third month alive","sans-serif",24,"rgb(100,0,0)","left",-1200,-90,270)
 ]));
 
-let live = new Popup(270,270,new MultiRenderComponent(0,0,[new PolygonComponent([{x:-20,y:-20},{x:1010,y:-20},{x:1010,y:220},{x:-20,y:220}],"grey","green",10),new WordWrappedTextComponent("You have survived and made it to spring but winter will be back before you know it. Draw a weather card to start a new game","sans-serif",64,"blue","left",0,-50,1000)]));
+let live = new Popup(270,270,new MultiRenderComponent(0,0,[new PolygonComponent([{x:-20,y:-20},{x:1010,y:-20},{x:1010,y:220},{x:-20,y:220}],"grey","green",10),new WordWrappedTextComponent("You have survived! You made it to spring but winter will be back before you know it. Draw a weather card to start a new game","sans-serif",48,"blue","left",0,-50,1000)]));
 game.addEntity(startGame);
 game.addEntity(playCards);
 game.addEntity(die);
@@ -964,10 +984,14 @@ let itemBurn = new CardCollection(row3,top,260,300,"Burn","item",{x:30,y:0},3)
 
 
 let weatherDraw = new CardCollection(row5-40,bot,200,300,"Weather Draw","weather")
-let weatherActive = new CardCollection(row6-70,bot,320,300,"Weather Active","weather",{x:40,y:0},4)
+let weatherActive = new CardCollection(row6-70,bot,320,300,"Active Weather","weather",{x:40,y:0},4)
 let weatherDiscard = new CardCollection(row6,top,200,300,"Weather Discard","weather")
 
 //itemBurn.addComponent(new ParticleEmitterComponent(.1, "dust",{x:0,y:0},itemBurn.shape));
+
+itemDiscard.locked = true;
+weatherDiscard.locked = true;
+itemDraw.locked = true;
 
 itemDraw.target = {stack:itemHand,count:-12,shuffel:false};
 itemDiscard.target = {stack:itemDraw ,count:0,shuffel:true};
@@ -1001,7 +1025,8 @@ itemDraw.userAction = function(){weatherDraw.activate(); return true;}
 itemEat.cardAdded = function(card){player.updateEat(card.stats.eat.value)}
 itemWear.cardAdded = function(card){player.updateWear(card.stats.wear.value)}
 itemBurn.cardAdded = function(card){player.updateBurn(card.stats.burn.value)}
-itemDraw.cardAdded = function(card){card.played = false;};
+itemDraw.cardAdded = function(card){card.played = false;}
+itemDraw.removeCardHook = function(card){  return this.locked; }
 itemEat.cardRemoved = function(card){player.updateEat(-card.stats.eat.value)}
 itemWear.cardRemoved = function(card){player.updateWear(-card.stats.wear.value)}
 itemBurn.cardRemoved = function(card){player.updateBurn(-card.stats.burn.value)}
@@ -1045,8 +1070,10 @@ weatherActive.addCardHook = function(card){
   player.temp.setRelative((((Math.max(1,player.wind.get()-player.wear.get())*player.cold.get())+player.burn.get()))+player.hunger.get("temp"));
   player.health.setRelative(player.temp.get("health")+player.hunger.get("health"));
 
+  itemDiscard.locked = false;
   itemEat.manAct();
   itemBurn.manAct();
+  itemDiscard.locked = true;
 
   for(let card of itemWear.cards){
     card.played = true;
@@ -1054,7 +1081,9 @@ weatherActive.addCardHook = function(card){
 
 
   if(this.cards.length <= 0){
+    itemDraw.locked = false;
     itemDraw.manAct();
+    itemDraw.locked = true;
     player.reset();
   }
   if(player.health.get("dead")){
@@ -1065,9 +1094,12 @@ weatherActive.addCardHook = function(card){
   }
 
   if(!this.cards.includes(card) && this.cards.length >= 4 ){
-
+    weatherDiscard.locked = false;
     this.activate();
+    weatherDiscard.locked = true;
+    itemDraw.locked = false;
     itemDraw.manAct();
+    itemDraw.locked = true;
     if(weatherDiscard.activate()){
       playCards.hide();
       startGame.hide();
@@ -1091,10 +1123,19 @@ weatherActive.cardRemoved = function(card){
 }
 
 
+weatherDiscard.addCardHook = function(){
+  return this.locked;
+}
+itemDiscard.addCardHook = function(){
+  return this.locked;
+}
+
 weatherDiscard.userAction = function(){
   if(this.cards.length < 12){
     return true;
   }
+  itemDiscard.locked = false;
+  weatherDiscard.locked = false;
   itemEat.manAct();
   itemBurn.manAct();
   itemWear.manAct();
@@ -1103,9 +1144,13 @@ weatherDiscard.userAction = function(){
   if(!player.health.get("dead")){
     live.show();
   }
+  itemDiscard.locked = true;
+  weatherDiscard.locked = true;
 
 }
 function gameOver(){
+  itemDiscard.locked = false;
+  weatherDiscard.locked = false;
   itemEat.manAct();
   itemBurn.manAct();
   itemWear.manAct();
@@ -1113,6 +1158,8 @@ function gameOver(){
   itemDiscard.manAct();
   weatherActive.manAct();
   weatherDiscard.manAct();
+  weatherDiscard.locked = true;
+  itemDiscard.locked = true;
   player.zoom()
 }
 game.addEntity(itemDraw);
