@@ -8,8 +8,8 @@ import {SoundEffectComponent, SoundEffectSystem }
 from './engine/soundEffects.js';
 import {SpriteComponent,RotatedSpriteComponent, ScaledSpriteComponent, TiledSpriteComponent,AnimatedSpriteComponent, SquareComponent,CircleComponent, RenderSystem, TextComponent, WordWrappedTextComponent, LineComponent, PolygonComponent, CameraComponent, CompositeSpriteComponent, MultiRenderComponent, EntityRenderComponent}
 from './engine/graphics.js';
-import {MusicComponent, MusicSystem, RequiredTagsComponent,BlacklistedTagsComponent}
-from './engine/music.js';
+//import {MusicComponent, MusicSystem, RequiredTagsComponent,BlacklistedTagsComponent}
+//from './engine/music.js';
 import {generatePolygon,Vector,pointInPolygon}
 from './engine/vector.js';
 import {TimerSystem, TimerComponent} from "./engine/timer.js";
@@ -25,29 +25,125 @@ from './engine/ui.js';
 
 export const game = new Game("Eat Wear Burn",document.getElementById("canvas"));
 
-const musicSystem = new MusicSystem();
-const ses = new SoundEffectSystem();
-ses.registerSoundEffect("./sound/Click 06.mp3","pickup");
-ses.registerSoundEffect("./sound/Click with echo.mp3","drop");
+
 const eventList = [{key:"Digit1",id:"systems"},{key:"Backquote",id:"overlay"},{key:"Digit2",id:"component"},{key:"Digit3",id:"entities"},{key:"Digit4",id:"particles"},{key:"Digit5",id:"collisions"},{key:"KeyW",id:"up"},{key:"ArrowUp",id:"up"},{key:"KeyS",id:"down"},{key:"ArrowDown",id:"down"},{key:"KeyA",id:"left"},{key:"ArrowUp",id:"left"},{key:"KeyD",id:"right"},{key:"ArrowRight",id:"right"},{key:"Space",id:"select"},{key:"Enter",id:"enter"}]
 const uii = new UISystem(eventList);
 
-//game.addSystem(musicSystem,2);
-game.addSystem(ses,4);
 game.addSystem(uii,0);
 game.addSystem(new ParticleSystem(),0);
 game.addSystem(new AnimationSystem(),0);
 game.addSystem(new RenderSystem(game),0);
 game.addSystem(new CollisionSystem(), 3)
 game.addSystem(new TimerSystem(),2)
-const jukeBox = new Entity("audio");
-//const music = new MusicComponent("./music/GameMusic.mp3",["happy", "phrase", "high", "F"]);
-//jukeBox.addComponent(music);
+const jukeBox = new Entity("system");
 jukeBox.addComponent(new CameraComponent("table",0,0,10,1550,750,.25));
 jukeBox.addComponent(new TransformComponent())
-/*
-game.addEntity(debug);
 
+game.addEntity(jukeBox);
+
+
+
+const audio = new Audio('./music/Winter Song.mp3');
+audio.loop = true;
+game.canvas.addEventListener('click', () => {
+  audio.play();
+});
+
+class Handle extends Component{
+  constructor(audio,width,height){
+    super("render");
+    this.marker = new CircleComponent(0,0,10,"black");
+    this.audio = audio;
+    this.width = width;
+    this.height = height;
+    this.icon = new ScaledSpriteComponent("./graphics/icons/music.png",0,-100,40,40,32,32)
+  }
+  draw(ctx,transform){
+    ctx.save();
+    ctx.translate(transform.x, transform.y);
+    ctx.rotate(transform.rotation);
+    ctx.scale(transform.scale, transform.scale);
+    const radius = 10;
+    const width = this.width;
+    const height = this.height;
+
+     let i = 0;
+
+    const fill = "white";
+    const stroke = "black";
+    const lineWidth = 2;
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lineWidth;
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+
+    ctx.moveTo(0, radius);
+    ctx.arc(radius,radius,radius, Math.PI, Math.PI*1.5);
+    ctx.lineTo(radius, 0);
+    ctx.arc(width-radius,radius,radius, Math.PI*1.5, Math.PI*2);
+    ctx.lineTo(width, radius);
+    ctx.arc(width-radius,height-radius,radius, 0, Math.PI/2);
+    ctx.lineTo(width-radius, height);
+    ctx.arc(radius,height-radius,radius, Math.PI/2,Math.PI);
+    ctx.lineTo(0, radius);
+
+    ctx.fill();
+    ctx.stroke();
+
+    // draw the marker
+    const h = this.height-this.audio.volume*height;
+    this.marker.draw(ctx,new TransformComponent(width/2,h));
+    this.icon.draw(ctx,new TransformComponent(0,0));
+    ctx.restore();
+  }
+}
+
+class Fader extends Entity{
+  constructor(audio, x = 0,y = 0,width = 20, height = 100){
+    super("graphics");
+    this.audio = audio;
+    this.audio.addEventListener("volumechange", this.soundCheck.bind(this));
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.shape = [{x:0,y:0},{x:this.width,y:0},{x:this.width,y:this.height},{x:0,y:this.height}];
+    this.addComponent(new TransformComponent(this.x, this.y,4002));
+    this.addComponent(new CollisionComponent(this.shape));
+    this.ui = new UIComponent();
+    this.ui.regesterCallback("pointer",this.setlevel.bind(this));
+    this.addComponent(this.ui);
+    this.addComponent(new Handle(this.audio, this.width, this.height))
+    this.audio.volume = 0.5;
+
+
+
+  }
+  soundCheck(){
+  // this.addComponent(new Component("table"));
+  }
+
+  setlevel(caller, event){
+    if(event.action == "down"){
+      this.selected = true;
+    }
+    if(this.selected){
+        this.audio.volume = Math.min(Math.max((this.height-(event.y-this.y))/this.height,0),1);
+      }
+    if(event.action == "up"){
+
+      this.selected = false;
+    }
+
+  }
+}
+
+
+
+
+game.addEntity(new Fader(audio,1510,80,30,200));
+
+game.addEntity(debug);
 debug.addComponent(new UIComponent([
   {event:"systems",callback:function(caller,input){if(input.action=="up"){caller.system = !caller.system;}}},
   {event:"overlay",callback:function(caller,input){if(input.action=="up"){caller.overlay = !caller.overlay;}}},
@@ -56,11 +152,10 @@ debug.addComponent(new UIComponent([
   {event:"particles",callback:function(caller,input){if(input.action=="up"){caller.particles = !caller.particles;}}},
   {event:"collisions",callback:function(caller,input){if(input.action=="up"){caller.collisions = !caller.collisions;}}}
 ]));
-*/
+
 
 const snow = new Entity("particles");
 snow.windspeed = 0;
-game.addEntity(jukeBox);
 
 function dustUpdate(particle, dt) {
   // Update the particle's position based on its velocity and acceleration
@@ -70,7 +165,7 @@ function dustUpdate(particle, dt) {
   particle.velocity.x += (Math.random()-0.5)*scaler;
   particle.velocity.y += (Math.random()-0.5)*scaler;
   particle.direction += particle.acceleration.x*scaler;
-  particle.velocity.x += (snow.windspeed-particle.velocity.x)*0.001;
+  particle.velocity.x += (snow.windspeed-particle.velocity.x)*0.001 * particle.acceleration.y;
   if ((particle.velocity.x < 0 && particle.position.x < 0)||particle.velocity.x > 0 && particle.position.y > 1550){
     particle.markFdForDeletion = true;
   }
@@ -636,10 +731,12 @@ class Player extends Entity{
 
         break;
       case "up":
-        if(this.zooming){
+        if(this.zoomed || this.zooming){
           this.zoom()
           this.zooming = false;
         }
+
+
 
         break;
       case "move":
@@ -699,8 +796,8 @@ class Player extends Entity{
   update(wind, temp){
     this.wind.set(this.wind.get()+wind);
     this.cold.set(this.cold.get()+temp);
-    snowMachine.emissionRate = Math.abs(this.temp.get())*0.002+0.005;
-    snow.windspeed = -this.wind.get();
+    snowMachine.emissionRate = Math.abs(this.temp.get())*0.004+0.005;
+    snow.windspeed = this.wind.get() * (Math.random()> 0.5 ? 1:-1);
   }
 }
 
@@ -1160,7 +1257,7 @@ function gameOver(){
   weatherDiscard.manAct();
   weatherDiscard.locked = true;
   itemDiscard.locked = true;
-  player.zoom()
+  //player.zoom()
 }
 game.addEntity(itemDraw);
 game.addEntity(itemDiscard);

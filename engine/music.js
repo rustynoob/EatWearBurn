@@ -98,87 +98,86 @@ export class MusicSystem extends System{
   }
 
   update(entities, dt) {
-    return;
-  // Check if a new track needs to be started
-  if (this.currentTrack == null || this.currentTrack.hasComponent('delete')) {
-    this.startTrack(this.nextTrack);
-    this.nextTrack = null;
-  }
 
-  // If there is no track loaded yet, select a track to start playing
-  if (this.currentTrack == null && this.nextTrack == null) {
-    for (const entity of entities) {
-      if (entity.hasComponent('music')) {
-        this.startTrack(entity);
-        break;
-      }
-    }
-  }
-  const trackLength = this.currentTrack.audioElement.duration;
-  const crossfadeLength = this.currentTrack.getComponent('music').crossfadeTime;
-  const crossfadeStart = trackLength - crossfadeLength;
-  const currentTime = this.currentTrack.audioElement.currentTime;
-  // Preload the next track if it's time to start the crossfade
-  if (this.nextTrack == null && this.currentTrack && crossfadeStart - 1 <= currentTime) {
-    this.preloadNextTrack(entities);
-  }
-
-  // Handle crossfading between tracks if necessary
-  if (this.currentTrack && this.nextTrack) {
-    const currentMusicComponent = this.currentTrack.getComponent('music');
-    const nextMusicComponent = this.nextTrack.getComponent('music');
-    if (crossfadeStart <= currentTime) {
-
-      if(this.nextTrack.audioElement.paused){
-          this.nextTrack.audioElement.volume = this.volume;
-        this.nextTrack.audioElement.play();
-
-      }
-      let crossfadePoint = (currentTime - crossfadeStart)/crossfadeLength;
-      if (crossfadePoint > 1){crossfadePoint = 1;}
-      this.currentTrack.audioElement.volume = 1-crossfadePoint;
-     // this.nextTrack.audioElement.volume = 0+crossfadePoint;
-
-    }
-
-    // If the crossfade is complete, set the current track to the next track
-    // and reset the next track to null
-    if (this.currentTrack.audioElement.ended) {
-        this.audioElementPool.releaseAudioElement(this.currentTrack.audioElement);
-
-      this.currentTrack = this.nextTrack;
+    // Check if a new track needs to be started
+    if (this.currentTrack == null ) {
+      this.startTrack(this.nextTrack);
       this.nextTrack = null;
     }
+
+    // If there is no track loaded yet, select a track to start playing
+    if (this.currentTrack == null && this.nextTrack == null) {
+      for (const entity of entities) {
+        const music = entity.getComponent('music')
+        if(music){
+          this.startTrack(music);
+          break;
+        }
+      }
+    }
+    const trackLength = this.currentTrack.audioElement.duration;
+    const crossfadeLength = this.currentTrack.crossfadeTime;
+    const crossfadeStart = trackLength - crossfadeLength;
+    const currentTime = this.currentTrack.audioElement.currentTime;
+    // Preload the next track if it's time to start the crossfade
+    if (this.nextTrack == null && this.currentTrack && crossfadeStart - 1 <= currentTime) {
+      this.preloadNextTrack(entities);
+    }
+
+    // Handle crossfading between tracks if necessary
+    if (this.currentTrack && this.nextTrack) {
+      const currentMusicComponent = this.currentTrack;
+      const nextMusicComponent = this.nextTrack;
+      if (crossfadeStart <= currentTime) {
+
+        if(this.nextTrack.audioElement.paused){
+            this.nextTrack.audioElement.volume = this.volume;
+          this.nextTrack.audioElement.play();
+
+        }
+        let crossfadePoint = (currentTime - crossfadeStart)/crossfadeLength;
+        if (crossfadePoint > 1){crossfadePoint = 1;}
+        this.currentTrack.audioElement.volume = 1-crossfadePoint;
+      // this.nextTrack.audioElement.volume = 0+crossfadePoint;
+
+      }
+
+      // If the crossfade is complete, set the current track to the next track
+      // and reset the next track to null
+      if (this.currentTrack.audioElement.ended) {
+          this.audioElementPool.releaseAudioElement(this.currentTrack.audioElement);
+
+        this.currentTrack = this.nextTrack;
+        this.nextTrack = null;
+      }
+    }
+    if(this.currentTrack.audioElement.paused){
+      this.currentTrack.audioElement.volume = this.volume;
+      this.currentTrack.audioElement.muted = this.muted;
+      this.currentTrack.audioElement.play();
+    }
+    if(this.dirty){
+      this.dirty = false;
+      this.currentTrack.audioElement.muted = this.muted;
+      this.currentTrack.audioElement.volume = this.volume;
+    }
   }
-  if(this.currentTrack.audioElement.paused){
-    this.currentTrack.audioElement.volume = this.volume;
-    this.currentTrack.audioElement.muted = this.muted;
-    this.currentTrack.audioElement.play();
-  }
-  if(this.dirty){
-    this.dirty = false;
-    this.currentTrack.audioElement.muted = this.muted;
-    this.currentTrack.audioElement.volume = this.volume;
-  }
-}
 
 
-  startTrack(entity) {
-    if (entity) {
-      const musicComponent = entity.getComponent('music');
+  startTrack(musicComponent) {
+    if (musicComponent) {
       const audioElement = this.audioElementPool.getAudioElement();
       audioElement.load();
       audioElement.src = musicComponent.url;
       audioElement.play();
-      entity.audioElement = audioElement;
-      this.currentTrack = entity;
-
+      musicComponent.audioElement = audioElement;
+      this.currentTrack = musicComponent;
     }
   }
 
   preloadTrackIgnoreCurrent(entities) {
     // Select the next track based on the tags of the current track
-    const currentMusicComponent = this.currentTrack.getComponent('music');
+    const currentMusicComponent = this.currentTrack;
     const currentTrackDuration = this.currentTrack.audioElement.duration;
     const potentialNextTracks = [];
     for (const entity of entities) {
@@ -186,6 +185,7 @@ export class MusicSystem extends System{
       if(musicComponents){
         for (const musicComponent of musicComponents){
           // Check if the entity has the required and blacklisted tags components
+         /*
           const requiredTagsComponent = entity.getComponent('requiredTags');
           const blacklistedTagsComponent = entity.getComponent('blacklistedTags');
           let shouldAdd = true;
@@ -208,8 +208,9 @@ export class MusicSystem extends System{
             }
           }
           if (shouldAdd) {
-            potentialNextTracks.push(entity);
-          }
+            */
+            potentialNextTracks.push(musicComponent);
+         // }
         }
       }
     }
@@ -217,7 +218,7 @@ export class MusicSystem extends System{
       this.nextTrack = potentialNextTracks[Math.floor(Math.random() * potentialNextTracks.length)];
       this.nextTrack.audioElement = this.audioElementPool.getAudioElement();
       this.nextTrack.audioElement.load();
-      this.nextTrack.audioElement.src = this.nextTrack.getComponent('music').url;
+      this.nextTrack.audioElement.src = this.nextTrack.url;
       this.nextTrack.audioElement.preload = 'auto';
     }else{
         preloadTrackIgnoreLists(entities);
@@ -226,7 +227,7 @@ export class MusicSystem extends System{
 
   preloadNextTrack(entities) {
  // Select the next track based on the tags of the current track
-    const currentMusicComponent = this.currentTrack.getComponent('music');
+    const currentMusicComponent = this.currentTrack;
     const currentTrackDuration = this.currentTrack.audioElement.duration;
     const potentialNextTracks = [];
     for (const entity of entities) {
@@ -258,7 +259,7 @@ export class MusicSystem extends System{
           if (shouldAdd) {
             for (const tag of musicComponent.tags) {
               if (currentMusicComponent.tags.includes(tag)) {
-                potentialNextTracks.push(entity);
+                potentialNextTracks.push(currentMusicComponent);
                 break;
               }
             }
@@ -270,16 +271,16 @@ export class MusicSystem extends System{
       this.nextTrack = potentialNextTracks[Math.floor(Math.random() * potentialNextTracks.length)];
       this.nextTrack.audioElement = this.audioElementPool.getAudioElement();
       this.nextTrack.audioElement.load();
-      this.nextTrack.audioElement.src = this.nextTrack.getComponent('music').url;
+      this.nextTrack.audioElement.src = this.nextTrack.url;
       this.nextTrack.audioElement.preload = 'auto';
     }else{
-        PreloadTrackIgnore(entities);
+        PreloadTrackIgnoreLists(entities);
     }
   }
 
   preloadTrackIgnoreLists(entities) {
     // Select the next track based on the tags of the current track
-    const currentMusicComponent = this.currentTrack.getComponent('music');
+    const currentMusicComponent = this.currentTrack;
     const currentTrackDuration = this.currentTrack.audioElement.duration;
     const potentialNextTracks = [];
     for (const entity of entities) {
@@ -289,7 +290,7 @@ export class MusicSystem extends System{
         for (const musicComponent of musicComponents){
           for (const tag of musicComponent.tags) {
             if (currentMusicComponent.tags.includes(tag)) {
-              potentialNextTracks.push(entity);
+              potentialNextTracks.push(musicComponent);
               break;
             }
           }
@@ -300,7 +301,7 @@ export class MusicSystem extends System{
       this.nextTrack = potentialNextTracks[Math.floor(Math.random() * potentialNextTracks.length)];
       this.nextTrack.audioElement = this.audioElementPool.getAudioElement();
       this.nextTrack.audioElement.load();
-      this.nextTrack.audioElement.src = this.nextTrack.getComponent('music').url;
+      this.nextTrack.audioElement.src = this.nextTrack.url;
       this.nextTrack.audioElement.preload = 'auto';
     }
     else{
@@ -309,7 +310,7 @@ export class MusicSystem extends System{
   }
   preloadRandomTrack(entities) {
     // Select the next track based on the tags of the current track
-    const currentMusicComponent = this.currentTrack.getComponent('music');
+    const currentMusicComponent = this.currentTrack;
     const currentTrackDuration = this.currentTrack.audioElement.duration;
     const potentialNextTracks = [];
     for (const entity of entities) {
@@ -317,7 +318,7 @@ export class MusicSystem extends System{
       const musicComponents = entity.getComponents("music");
       if(musicComponents){
         for (const musicComponent of musicComponents){
-          potentialNextTracks.push(entity);
+          potentialNextTracks.push(musicComponent);
         }
       }
     }
@@ -325,7 +326,7 @@ export class MusicSystem extends System{
       this.nextTrack = potentialNextTracks[Math.floor(Math.random() * potentialNextTracks.length)];
       this.nextTrack.audioElement = this.audioElementPool.getAudioElement();
       this.nextTrack.audioElement.load();
-      this.nextTrack.audioElement.src = this.nextTrack.getComponent('music').url;
+      this.nextTrack.audioElement.src = this.nextTrack.url;
       this.nextTrack.audioElement.preload = 'auto';
     }
     else{

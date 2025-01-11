@@ -27,14 +27,14 @@ export class ParticleTypeComponent extends Component {
 	// Iterate over the particles in this type
     for (const particle of this.particles) {
 	  if(particle.markedForDeletion){
-		
+
 		continue;
 	  }
 	  active++;
       // Update the particle using the callback function
       this.updateFn(particle, dt);
-     
-     
+
+
       // Check for collisions with the interactors
       const queryMin = [particle.position.x - particle.radius,   particle.position.y - particle.radius];
       const queryMax = [particle.position.x + particle.radius, particle.position.y + particle.radius];
@@ -84,7 +84,7 @@ export class ParticleTypeComponent extends Component {
           ctx.rotate(transform.rotation);
           ctx.scale(transform.scale, transform.scale);
 
-           this.render.draw(ctx, new TransformComponent(particle.position.x,particle.position.y,0,particle.direction));
+           this.render.draw(ctx, new TransformComponent(particle.position.x,particle.position.y,0,particle.direction,particle.acceleration.y));
           ctx.restore();
         }
       }
@@ -162,7 +162,7 @@ export class ParticleEmitterComponent extends Component {
           // Give the particle a random velocity
            new Vector({ x: (Math.random() * 2 - 1)*.2, y: (Math.random())*.2 }),
           // Set the particle's acceleration to 0
-           new Vector({ x: Math.random(), y: Math.random() }),
+           new Vector({ x: Math.random(), y: Math.random()+0.2 }),
           // Set the particle's direction to 0
           Math.random()*6.28,
           // Set the particle's color to white
@@ -191,7 +191,7 @@ function defaultParticleGenerator(origin, polygon, lifetime, particleType){
       // Give the particle a random velocity
         new Vector({ x: (Math.random() * 2 - 1)*.2, y: (Math.random() * 2 - 1)*.2 }),
       // Set the particle's acceleration to 0
-        new Vector({ x: 0, y: 0 }),
+        new Vector({ x: 0, y: Math.random()+10 }),
       // Set the particle's direction to 0
       0,
       // Set the particle's color to white
@@ -350,11 +350,11 @@ export class ParticleSystem extends System{
             // Offset the particle position by the   transform of the entity
             particle.position.x += transform.x;
             particle.position.y += transform.y;
-            
+
             // Add the particle to the appropriate particle type's particles array
             for(;p<particlePool.length && !particlePool[p].markedForDeletion;p++);
             particlePool[p] = particle;
-		 
+
 		 }
       }
     }
