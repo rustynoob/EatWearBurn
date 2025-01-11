@@ -39,7 +39,7 @@
       {"name":"newspaper","quantity":"1","type":"item","image":"./graphics/large sprites/newspaper.png","eat":"2","wear":"2","burn":"3"},
       {"name":"marshmallows","quantity":"1","type":"item","image":"./graphics/large sprites/marshmallows.png","eat":"3","wear":"2","burn":"1"},
       {"name":"logs","quantity":"1","type":"item","image":"./graphics/large sprites/logs.png","eat":"1","wear":"1","burn":"5"},
-      {"name":"hemp","quantity":"1","type":"item","image":"./graphics/large sprites/hemp.png","eat":"2","wear":"3","burn":"3"},
+      {"name":"hemp","quantity":"0","type":"item","image":"./graphics/large sprites/hemp.png","eat":"2","wear":"3","burn":"3"},
       {"name":"goose","quantity":"1","type":"item","image":"./graphics/large sprites/goose.png","eat":"4","wear":"4","burn":"2"},
       {"name":"fork","quantity":"1","type":"item","image":"./graphics/large sprites/fork.png","eat":"1","wear":"1","burn":"1"},
       {"name":"drumbstick","quantity":"1","type":"item","image":"./graphics/large sprites/drumbstick.png","eat":"3","wear":"1","burn":"1"},

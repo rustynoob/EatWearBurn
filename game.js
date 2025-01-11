@@ -20,7 +20,16 @@ import {UISystem, UIComponent}
 from './engine/ui.js';
 
 
-
+const getMobileOS = () => {
+  const ua = navigator.userAgent
+  if (/android/i.test(ua)) {
+    return "Android"
+  }
+  else if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)){
+    return "iOS"
+  }
+  return "Other"
+}
 
 
 export const game = new Game("Eat Wear Burn",document.getElementById("canvas"));
@@ -115,12 +124,12 @@ class Fader extends Entity{
     this.addComponent(this.ui);
     this.addComponent(new Handle(this.audio, this.width, this.height))
     this.audio.volume = 0.5;
-
+    this.addComponent(new Component("table"));
 
 
   }
   soundCheck(){
-  // this.addComponent(new Component("table"));
+  //
   }
 
   setlevel(caller, event){
@@ -138,11 +147,10 @@ class Fader extends Entity{
   }
 }
 
-
-
-
-game.addEntity(new Fader(audio,1510,80,30,200));
-
+const os = getMobileOS();
+if(os != 'iOS'){
+  game.addEntity(new Fader(audio,1510,80,30,200));
+}
 game.addEntity(debug);
 debug.addComponent(new UIComponent([
   {event:"systems",callback:function(caller,input){if(input.action=="up"){caller.system = !caller.system;}}},
@@ -1012,7 +1020,7 @@ let die = new Popup(1340,98,new MultiRenderComponent(0,0,[new PolygonComponent([
 
 let intro = new Popup(20,20,new MultiRenderComponent(0,0,[
   new PolygonComponent([{x:-20,y:-20},{x:1550,y:-20},{x:1550,y:800},{x:-20,y:800}],"rgba(200,200,200,0.7)","transparent",10),
-  new WordWrappedTextComponent("Winter has arrived. You must survive using the items you scavenge. Each item may be eaten, worn or burned to help you survive the bitter cold.","sans-serif",32,"rgb(100,0,0)","center",-757,-350,1400),
+  new WordWrappedTextComponent("Winter has arrived. You must survive using the items you scavenge. Each item may be eaten, worn or burned to help you survive the bitter cold.","sans-serif",32,"rgb(100,0,0)","center",-757,-350,1400), new WordWrappedTextComponent("Eat-Wear-Burn was written and designed by Be Creative. Art by CRC. Music by  Snowyninja. Many thanks to all our friends and family for testing and invaluble feedback.","sans-serif",28,"rgb(20,40,100)","center",-757,-700,1400),
   new WordWrappedTextComponent("Winter lasts 3 months. Each months is 4 weeks. At the start of each month draw 12 cards from the item pile into your hand and flip one weather card from the weather draw pile onto the active weather pile.","sans-serif",24,"rgb(100,0,0)","left",-30,-450,400),
     new WordWrappedTextComponent("Each week play cards from your hand to the Eat, Wear, and Burn piles. Each pile may contain up to three cards. you may play as many cards as you want in a turn but be careful because you won't get any new cards until the end of the month.","sans-serif",24,"rgb(100,0,0)","left",-430,-450,350),
     new WordWrappedTextComponent("Once you are satisfied with your choices each pile is resolved in the order Eat, Wear, Burn and then the health tracker is adjusted based on the hunger and temperature trackers. If at any time your health reaches the bottom slot of the health bar you die.","sans-serif",24,"rgb(100,0,0)","left",-800,-450,350),
@@ -1311,6 +1319,7 @@ fetch('cards.json')
         game.addEntity(c);
         cardList.push(c);
         c.addComponent(new TimerComponent(2000,initCard));
+     //   c.flip("up")
       }
     }
   });
@@ -1349,6 +1358,7 @@ export function togglePause(){
 function pauseGame() {
   // Code to pause the game here
   gamePaused = true;
+  audio.pause();
 }
 
 function resumeGame() {
@@ -1356,6 +1366,7 @@ function resumeGame() {
   // Code to resume the game here
   //lastFrameTimeMs = 0;
   requestAnimationFrame(update);
+  audio.play()
 }
 
 window.addEventListener("blur", pauseGame);
