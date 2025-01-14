@@ -179,6 +179,7 @@ export class Game {
     this.index = 0;
     this.targetFrameTime = targetFrameTime;
     document.title = name;
+    this.background = "black";
   }
 
   addEntity(entity) {

@@ -19,6 +19,7 @@ export class CameraComponent extends Component {
     this.buffer
     this.context
     this.mouse = {x:0,y:0};
+    this.background = "transparent";
     this.resize()
     window.addEventListener('resize', this.resize.bind(this));
   }
@@ -668,7 +669,8 @@ export class RenderSystem extends System{
     // Get the main canvas and its context
     const mainCtx = this.ctx;
     // Clear the canvas
-    mainCtx.fillStyle = 'rgb(0,0,0)';
+    mainCtx.clearRect(0, 0, canvas.width, canvas.height);
+    mainCtx.fillStyle = this.game.background;
     mainCtx.fillRect(0, 0, canvas.width, canvas.height);
    // Draw the back buffers to the main canvas
     for (const entity of sortedCameras) {
